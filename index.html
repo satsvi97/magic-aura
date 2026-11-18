@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magic Aura — scene atmosphere for SillyTavern</title>
+<meta name="description" content="Magic Aura — weather, particles and mood over the chat for SillyTavern. 17 scenes, canvas engine, made with love by Selena's Tavern.">
+<meta name="theme-color" content="#0d0914">
+<style>
+    html, body { height: 100%; }
+    body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(125% 95% at 68% 6%, #2f2452 0%, #191231 40%, #0a0714 100%);
+        color: #e6e6fa;
+        font-family: 'Manrope', 'Segoe UI', system-ui, sans-serif;
+        text-align: center;
+        padding: 24px;
+    }
+    .mark {
+        width: 10px; height: 10px; border-radius: 50%;
+        display: inline-block; vertical-align: middle; margin-right: 10px;
+        background: radial-gradient(circle at 35% 30%, #ffd580, #e8c396 55%, #8a6a44);
+        box-shadow: 0 0 12px rgba(232, 195, 150, .6);
+    }
+    h1 {
+        margin: 0 0 6px;
+        font-size: clamp(1.6rem, 5vw, 2.4rem);
+        letter-spacing: .1em;
+        text-shadow: 0 0 22px rgba(184, 184, 255, .35);
+    }
+    p { color: #b8b8ff; margin: 6px 0 22px; font-size: .95rem; }
+    .links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    a.btn {
+        display: inline-block;
+        padding: 10px 18px;
+        border-radius: 10px;
+        border: 1px solid #2a2340;
+        background: rgba(184, 184, 255, .07);
+        color: #d4d4ff;
+        text-decoration: none;
+        font-size: .9rem;
+        transition: border-color .2s ease, color .2s ease;
+    }
+    a.btn:hover { border-color: #5a4b8f; color: #fff; }
+    footer { margin-top: 30px; font-size: .78rem; letter-spacing: .04em; color: rgba(184, 184, 255, .5); }
+    footer a { color: rgba(232, 195, 150, .8); text-decoration: none; }
+</style>
+</head>
+<body>
+<main>
+    <h1><span class="mark" aria-hidden="true"></span>MAGIC AURA</h1>
+    <p>Scene atmosphere &amp; weather for SillyTavern</p>
+    <div class="links">
+        <a class="btn" href="demo/demo.html">Live demo</a>
+        <a class="btn" href="https://github.com/satsvi97/magic-aura">GitHub</a>
+        <a class="btn" href="https://satsvi97.github.io/selena/">Selena's Tavern</a>
+    </div>
+    <footer>
+        Made with love by <a href="https://satsvi97.github.io/selena/">Selena's Tavern</a><br>
+        Inspired by Nimbus: Scene Atmosphere (Tavo)
+    </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Magic Aura — демо</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background: #0d0914;
+        color: #e6e6fa;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .fake-st {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 24px 18px 200px;
+        position: relative;
+        z-index: 1;
+    }
+    .msg {
+        margin: 0 0 14px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid #2a2340;
+        background: rgba(25, 20, 40, 0.78);
+        line-height: 1.55;
+        font-size: 14px;
+    }
+    .msg.user { background: rgba(184, 184, 255, 0.08); }
+    .msg .who { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6f88c8; margin-bottom: 6px; }
+    .demo-bar {
+        position: fixed; left: 12px; top: 12px; z-index: 3003;
+        display: flex; gap: 8px; align-items: center;
+        font-size: 12px; color: #6f88c8;
+        background: rgba(21, 16, 31, .8); border: 1px solid #2a2340; border-radius: 10px; padding: 6px 10px;
+    }
+    .demo-bar b { color: #e8c396; font-weight: 600; }
+    #extensions_settings2 { position: fixed; right: 12px; top: 12px; width: 300px; max-height: calc(100vh - 24px); overflow-y: auto; z-index: 3003; }
+</style>
+</head>
+<body>
+<div class="demo-bar">MAGIC AURA · демо без ST · <b id="demo-scene">night</b> · клик по чипу меняет сцену</div>
+
+<div class="fake-st">
+    <div class="msg"><span class="who">Трактирщик</span>Дверь скрипнула, и в зал вполз холод. За окнами — только ночь и звёзды над чёрными крышами.</div>
+    <div class="msg user"><span class="who">Ты</span>Я подбросила дров в камин и села ближе к огню.</div>
+    <div class="msg"><span class="who">Трактирщик</span>Огонь лизнул поленья, искры поднялись к балкам и погасли где-то под потолком.</div>
+</div>
+
+<div id="extensions_settings2"></div>
+
+<script type="module">
+import { Engine } from '../src/engine.js';
+import { SCENES, SCENE_BY_ID } from '../src/scenes.js';
+import { createUI } from '../src/ui.js';
+
+const settings = {
+    enabled: true,
+    scene: 'night',
+    lite: false,
+    autoMood: false,
+    perChat: false,
+    showFab: true,
+    fabPos: 'right',
+    layer: 'behind',
+    look: { density: 1, opacity: 0.9, speed: 1, size: 1, shade: 0.28, sky: 0.45 },
+};
+
+const engine = new Engine();
+engine.mount();
+/* headless-скриншоты не прокручивают CSS-переходы: для демо отключаем фейд */
+engine.root.style.transition = 'none';
+engine.fx.style.transition = 'none';
+
+function applyScene(id) {
+    settings.scene = id;
+    const scene = id ? SCENE_BY_ID.get(id) : null;
+    if (settings.enabled && scene) {
+        engine.setLite(settings.lite);
+        engine.setLook(settings.look);
+        engine.setLayer(settings.layer);
+        engine.setScene(scene);
+    } else {
+        engine.stop();
+        engine.setOff(true);
+    }
+    document.getElementById('demo-scene').textContent = id || 'off';
+    ui.refresh();
+}
+
+const ui = createUI({
+    version: '0.2.0',
+    scenes: SCENES,
+    getSettings: () => settings,
+    setScene: (id) => applyScene(id),
+    patch: (key, value) => { settings[key] = value; if (key === 'lite') engine.setLite(value); applyScene(settings.scene); },
+    patchLook: (key, value) => { settings.look[key] = value; engine.setLook(settings.look); if (key === 'density') engine.rebuild(); ui.refresh(); },
+    reset: () => { const s = settings.scene; Object.assign(settings, { enabled: true, lite: false, autoMood: false, perChat: false, showFab: true, fabPos: 'right', layer: 'behind', look: { density: 1, opacity: 0.9, speed: 1, size: 1, shade: 0.28, sky: 0.45 } }); applyScene(s); },
+});
+
+ui.mountPanel(document.getElementById('extensions_settings2'));
+ui.mountFab();
+const want = new URLSearchParams(location.search).get('scene');
+const q = new URLSearchParams(location.search);
+if (q.get('shade') !== null) settings.look.shade = Number(q.get('shade'));
+if (q.get('opacity') !== null) settings.look.opacity = Number(q.get('opacity'));
+if (q.get('blend')) engine.root.style.mixBlendMode = q.get('blend');
+if (q.get('layer')) settings.layer = q.get('layer');
+/* ?bare=1 — чистая картинка без панели и подписи (для превью и сайта) */
+if (q.get('bare')) {
+    const bar = document.querySelector('.demo-bar');
+    const host = document.getElementById('extensions_settings2');
+    const uiBox = document.getElementById('atmos-ui');
+    if (bar) bar.style.display = 'none';
+    if (host) host.style.display = 'none';
+    if (uiBox) uiBox.style.display = 'none';
+}
+applyScene(want && SCENE_BY_ID.has(want) ? want : 'night');
+
+window.__atmos = { engine, settings, ui, applyScene };
+</script>
+</body>
+</html>
+
