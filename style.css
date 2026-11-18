@@ -110,11 +110,10 @@
 .atmos-grain {
     opacity: 0.045;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-    mix-blend-mode: overlay;
 }
 
-/* Зерно статичное: раньше оно дёргалось в цикле 0.9 с, и на больших градиентах
-   это читалось как «окрашивание съезжает». Текстура осталась, движения нет. */
+/* Зерно без mix-blend-mode: на мобильных GPU смешивание поверх backdrop-filter
+   чата давало прямоугольные артефакты. Текстура осталась, режим — обычный. */
 
 @keyframes atmos-grain {
     0% { transform: translate3d(0, 0, 0); }

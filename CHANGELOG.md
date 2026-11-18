@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1 — mobile compositing fixes
+
+- **Light shafts rebuilt on canvas.** The `sunny` scene used a CSS `mask-image` over a
+  `repeating-linear-gradient`; on mobile GPUs that combination produced big rectangular,
+  hard-edged colour patches over the chat. Now the beams are drawn once into a canvas and
+  composited as a single image — no masks, no repeating gradients.
+- **Film grain no longer uses `mix-blend-mode: overlay`.** Blending over the chat's
+  `backdrop-filter` was the second suspected source of the same rectangular artifacts.
+- The `sunny` sky itself is darker, so it reads as light in the room instead of a bright blob.
+
 ## 0.3.0 — Scene Panel sync and new scenes
 
 - **Scene Panel integration.** Magic Aura reads `chat_metadata.scene_panel` (weather, place,
