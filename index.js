@@ -7,6 +7,7 @@
 import { Engine } from './src/engine.js';
 import { SCENES, SCENE_BY_ID, findScene, matchScene, OFF_RE } from './src/scenes.js';
 import { createUI } from './src/ui.js';
+import { readPanelState, deriveAtmosphere, panelKey } from './src/scenepanel.js';
 
 const STORE = 'atmos';
 
@@ -20,6 +21,7 @@ const DEFAULTS = {
     fabPos: 'right',
     layer: 'behind',
     debug: false,
+    syncPanel: true,
     look: { density: 1, opacity: 0.9, speed: 1, size: 1, shade: 0.28, sky: 0.45 },
 };
 
@@ -96,13 +98,13 @@ function rememberChat() {
 
 const engine = new Engine();
 
-const VERSION = '0.2.1';
+const VERSION = '0.3.0';
 
 const ui = createUI({
     version: VERSION,
     scenes: SCENES,
     getSettings: () => settings,
-    setScene: (id) => applyScene(id),
+    setScene: (id) => applyScene(id, { user: true }),
     patch: (key, value) => {
         settings[key] = value;
         persist();
@@ -144,16 +146,27 @@ function afterChange(key) {
         delete ctx.chatMetadata[STORE];
         ctx.saveMetadataDebounced?.();
     }
+    if (key === 'syncPanel' && settings.syncPanel) {
+        syncFromPanel(true);
+    }
     ui.refresh();
 }
 
 /**
  * @param {string|null} id
- * @param {{save?: boolean}} [opts]
+ * @param {{save?: boolean, user?: boolean}} [opts]
  */
 function applyScene(id, opts = {}) {
     const scene = id && SCENE_BY_ID.has(id) ? SCENE_BY_ID.get(id) : null;
     settings.scene = scene ? scene.id : null;
+
+    /* ручной выбор сцены главнее Scene Panel — иначе таверна будет
+       перекрашиваться под текст прямо в момент, когда выбрана картинка */
+    if (opts.user && settings.syncPanel) {
+        settings.syncPanel = false;
+        persist();
+        toast('Синхронизация со Scene Panel выключена');
+    }
 
     engine.mount();
     engine.setLayer(settings.layer);
@@ -173,9 +186,33 @@ function applyScene(id, opts = {}) {
     ui.refresh();
 }
 
+/* ---------- Scene Panel ---------- */
+
+let panelKeyCache = '';
+
+function syncFromPanel(force = false) {
+    if (!ctx || !settings.enabled || !settings.syncPanel) return;
+    const state = readPanelState(ctx);
+    if (!state) return;
+
+    const key = panelKey(state);
+    if (!force && key === panelKeyCache) return;
+    panelKeyCache = key;
+
+    const derived = deriveAtmosphere(state);
+    if (!derived) return;
+
+    engine.setMood({ shadeK: derived.shadeK });
+    if (derived.sceneId && derived.sceneId !== settings.scene) {
+        applyScene(derived.sceneId, { save: false });
+    }
+}
+
 /* ---------- события ST ---------- */
 
 function onChatChanged() {
+    /* Scene Panel пишет состояние уже после смены чата — даём ему дочитать */
+    setTimeout(() => syncFromPanel(true), 400);
     if (!settings.perChat) return;
     const saved = ctx?.chatMetadata?.[STORE]?.scene ?? settings.scene;
     if (saved !== settings.scene) applyScene(saved ?? null, { save: false });
@@ -186,7 +223,11 @@ let lastMoodAt = 0;
 const MOOD_COOLDOWN = 20000;
 
 function onMessageReceived(messageId) {
-    if (!settings.enabled || !settings.autoMood) return;
+    /* Scene Panel разбирает тег [[scene: ...]] из этого же сообщения;
+       ждём немного, чтобы прочитать уже обновлённое состояние */
+    setTimeout(() => syncFromPanel(), 600);
+
+    if (!settings.enabled || !settings.autoMood || settings.syncPanel) return;
     /* антидребезг: сцена не переключается чаще, чем раз в 20 с.
        Иначе окрашивание «гуляет» на каждом сообщении и читается как глюк. */
     const now = Date.now();
@@ -207,6 +248,23 @@ function bindEvents() {
     const types = ctx.eventTypes || {};
     if (types.CHAT_CHANGED) ctx.eventSource.on(types.CHAT_CHANGED, onChatChanged);
     if (types.MESSAGE_RECEIVED) ctx.eventSource.on(types.MESSAGE_RECEIVED, onMessageReceived);
+}
+
+/* Scene Panel умеет менять состояние и без события (ползунки, день, погода),
+   поэтому раз в две секунды сверяем короткий ключ — это дешевле обработчиков. */
+let panelTimer = 0;
+
+function startPanelWatch() {
+    stopPanelWatch();
+    panelTimer = setInterval(() => {
+        if (document.hidden) return;
+        syncFromPanel();
+    }, 2000);
+}
+
+function stopPanelWatch() {
+    if (panelTimer) clearInterval(panelTimer);
+    panelTimer = 0;
 }
 
 /* ---------- слэш-команды ---------- */
@@ -309,6 +367,8 @@ async function boot() {
     bindCommands();
 
     applyScene(settings.scene, { save: false });
+    syncFromPanel(true);
+    startPanelWatch();
     ui.refresh();
 
     console.log('[Magic Aura] готово. Сцен:', SCENES.length);
@@ -318,6 +378,7 @@ boot();
 
 /* на случай, если ST захочет перезагрузить расширение без перезапуска страницы */
 export function unload() {
+    stopPanelWatch();
     engine.destroy();
     document.getElementById('atmos-settings')?.remove();
     document.getElementById('atmos-ui')?.remove();

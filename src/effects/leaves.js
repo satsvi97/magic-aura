@@ -1,5 +1,5 @@
 /* Листья и лепестки. Спрайт рисуется один раз на цвет, в кадре — поворот и один drawImage. */
-import { registerEffect, rnd, clamp } from '../engine.js';
+import { registerEffect, rnd, clamp, gust } from '../engine.js';
 
 const S = 48;
 
@@ -121,7 +121,7 @@ registerEffect({
             draw(ctx, t, dt) {
                 for (const f of list) {
                     f.y += f.v * dt;
-                    f.x += (f.drift + Math.sin(t * f.spd + f.ph) * f.sway) * dt;
+                    f.x += (f.drift + Math.sin(t * f.spd + f.ph) * f.sway) * (1 + gust(t, 5.2) * 0.9) * dt;
                     f.rot += f.spin * dt;
 
                     if (f.y - f.r > h + 20) {

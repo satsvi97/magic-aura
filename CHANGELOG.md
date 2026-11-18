@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0 — Scene Panel sync and new scenes
+
+- **Scene Panel integration.** Magic Aura reads `chat_metadata.scene_panel` (weather, place,
+  timeOfDay, mood) and picks the atmosphere itself: weather drives particles, place drives the look,
+  time of day drives the sky, mood adjusts the shade. Read-only — nothing is written into Scene
+  Panel. Manual scene choice turns the sync off; the “Sync with Scene Panel” checkbox turns it back on.
+- **New scenes (22 total):** `cloudy`, `sunny` (light shafts through a mask), `hail`, `blizzard`,
+  and `birthday` — candles and cake, added as a gift.
+- **New effects:** `ash` (slow grey flakes), `groundm` (dense low mist along the bottom),
+  `hail` (fast, with bounces and impact rings).
+- **Wind gusts** for snow, leaves, ash and low mist — falling particles now move in waves instead of
+  drifting in a straight line.
+- Sky layers support an optional CSS mask — used for the light shafts fading downwards.
+
 ## 0.2.1 — mobile and resize fixes
 
 - **Layer no longer stops above the message input on phones.** Mobile webviews under-report the

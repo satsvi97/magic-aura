@@ -1,5 +1,5 @@
 /* Осадки: дождь и снег. Оба эффекта живут в общем canvas движка. */
-import { registerEffect, rnd, clamp, budget } from '../engine.js';
+import { registerEffect, rnd, clamp, budget, gust } from '../engine.js';
 
 /* ---------- дождь ---------- */
 registerEffect({
@@ -109,9 +109,10 @@ registerEffect({
             },
             draw(ctx, t, dt) {
                 ctx.fillStyle = `rgb(${color})`;
+                const g = 1 + gust(t, 3.1) * 1.4;
                 for (const f of flakes) {
                     f.y += f.v * dt;
-                    f.x += (Math.sin(t * f.sp + f.ph) * f.sway + f.v * wind) * dt;
+                    f.x += (Math.sin(t * f.sp + f.ph) * f.sway + f.v * wind * g) * dt;
                     if (f.y > h + 6) {
                         Object.assign(f, make(false));
                         continue;
@@ -181,6 +182,95 @@ registerEffect({
                     ctx.beginPath();
                     ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
                     ctx.fill();
+                }
+            },
+        };
+    },
+});
+
+/* ---------- град: быстрый, с отскоком от нижней кромки ---------- */
+registerEffect({
+    id: 'hail',
+    name: 'Град',
+    icon: '🧊',
+    group: 'precip',
+    motion: true,
+    create(env) {
+        let w = env.w;
+        let h = env.h;
+        const p = env.params || {};
+        const color = p.color || '238,242,255';
+        const wind = p.wind ?? 0.18;
+        let list = [];
+
+        function make(init) {
+            return {
+                x: rnd(-0.2, 1.2) * w,
+                y: init ? rnd(0, h) : rnd(-h * 0.5, -10),
+                r: rnd(1.5, 4.4),
+                v: rnd(620, 1180),
+                vy: 0,
+                o: rnd(0.35, 0.9),
+                bounced: 0,
+            };
+        }
+
+        function seed() {
+            list = Array.from({ length: budget(w, h, 24000, 12, 90, env) }, () => make(true));
+            for (const s of list) s.vy = s.v;
+        }
+        seed();
+
+        return {
+            resize(nw, nh) {
+                w = nw;
+                h = nh;
+                seed();
+            },
+            draw(ctx, t, dt) {
+                for (const s of list) {
+                    if (s.bounced > 0) {
+                        s.bounced -= dt;
+                        s.vy += 1900 * dt;
+                        s.y += s.vy * dt;
+                        s.x += s.v * wind * 0.6 * dt;
+                        if (s.bounced <= 0) {
+                            Object.assign(s, make(false));
+                            s.vy = s.v;
+                        }
+                        continue;
+                    }
+
+                    s.y += s.vy * dt;
+                    s.x += s.v * wind * dt;
+
+                    if (s.y + s.r >= h) {
+                        /* удар о «землю»: короткий подскок и исчезновение */
+                        s.y = h - s.r;
+                        s.vy = -s.vy * 0.28;
+                        s.bounced = rnd(0.12, 0.26);
+                        ctx.fillStyle = `rgba(${color},${s.o * 0.5})`;
+                        ctx.beginPath();
+                        ctx.ellipse(s.x, h - 1, s.r * 3.2, s.r * 0.7, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        continue;
+                    }
+                    if (s.x < -30) s.x = w + 30;
+                    if (s.x > w + 30) s.x = -30;
+
+                    const k = clamp(s.o, 0.15, 1);
+                    ctx.fillStyle = `rgba(${color},${k})`;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    /* лёгкий след за градиной */
+                    ctx.strokeStyle = `rgba(${color},${k * 0.35})`;
+                    ctx.lineWidth = Math.max(0.7, s.r * 0.55);
+                    ctx.beginPath();
+                    ctx.moveTo(s.x, s.y);
+                    ctx.lineTo(s.x - s.v * wind * 0.012, s.y - 14);
+                    ctx.stroke();
                 }
             },
         };

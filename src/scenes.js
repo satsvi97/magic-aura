@@ -10,6 +10,7 @@ import './effects/water.js';
 import './effects/sand.js';
 import './effects/leaves.js';
 import './effects/magic.js';
+import './effects/ash.js';
 
 /* ---------- небо ---------- */
 
@@ -30,6 +31,10 @@ registerSky('autumn', 'radial-gradient(112% 86% at 50% 92%, #5b3620 0%, #2b1d18 
 registerSky('garden', 'radial-gradient(118% 92% at 42% 88%, #1b4a2c 0%, #132a24 46%, #080c10 100%)');
 registerSky('sakura', 'radial-gradient(120% 95% at 50% 84%, #4c2442 0%, #2a1730 46%, #0e0812 100%)');
 registerSky('arcane', 'radial-gradient(125% 100% at 50% 28%, #2f1c5c 0%, #180f30 46%, #080610 100%)');
+registerSky('sunny', 'radial-gradient(120% 100% at 50% 4%, #8a6438 0%, #452f20 44%, #150e10 100%)');
+registerSky('sunrays', 'repeating-linear-gradient(104deg, rgba(255,216,156,.16) 0px, rgba(255,216,156,0) 52px, rgba(255,216,156,.1) 104px, rgba(255,216,156,0) 168px)');
+registerSky('birthday', 'radial-gradient(90% 75% at 50% 80%, #6a3a20 0%, #341c30 46%, #0e0812 100%)');
+registerSky('candlelight', 'radial-gradient(circle 260px at 50% 74%, rgba(255,210,140,.85) 0 10%, rgba(255,186,110,.3) 34%, rgba(255,170,96,.08) 62%, transparent 82%)');
 
 /* ---------- сцены ---------- */
 
@@ -245,6 +250,76 @@ export const SCENES = [
             { effect: 'motes', params: { color: '210,196,255', size: 0.6 }, intensity: 0.45 },
         ],
         keywords: ['магия', 'магическ', 'чары', 'заклят', 'заклинани', 'колдов', 'arcane', 'magic', 'spell'],
+    },
+    {
+        id: 'cloudy',
+        name: 'Облачно',
+        icon: '☁️',
+        sky: 'overcast',
+        grade: { shade: 1.05, tint: 'rgba(44,50,66,.18)' },
+        layers: [
+            { effect: 'mist', params: { color: '176,182,200' }, intensity: 0.9 },
+            { effect: 'motes', params: { color: '198,206,226', size: 0.6 }, intensity: 0.35 },
+        ],
+        keywords: ['облачн', 'пасмурн', 'хмур', 'серо', 'cloudy', 'overcast', 'mulen'],
+    },
+    {
+        id: 'sunny',
+        name: 'Солнечный день',
+        icon: '☀️',
+        sky: [
+            'sunny',
+            {
+                id: 'sunrays',
+                mask: 'linear-gradient(to bottom, rgba(0,0,0,.95) 0%, rgba(0,0,0,.35) 48%, transparent 78%)',
+            },
+        ],
+        grade: { shade: 0.85, tint: 'rgba(150,96,36,.16)' },
+        layers: [
+            { effect: 'motes', params: { color: '255,224,168', size: 0.9 }, intensity: 1.2 },
+            { effect: 'shimmer', params: { color: '255,214,150' }, intensity: 0.55 },
+            { effect: 'groundm', params: { color: '255,220,170', level: 0.16 }, intensity: 0.4 },
+        ],
+        keywords: ['солнечн', 'солнц', 'ясн', 'жарк', 'sunny', 'sunlight', 'clear sky'],
+    },
+    {
+        id: 'hail',
+        name: 'Град',
+        icon: '🧊',
+        sky: 'storm',
+        grade: { shade: 1.15, tint: 'rgba(30,36,58,.2)' },
+        layers: [
+            { effect: 'rain', params: { wind: 0.3, len: 1.1 }, intensity: 0.7 },
+            { effect: 'hail', params: { wind: 0.2 } },
+            { effect: 'groundm', params: { color: '180,190,214', level: 0.24 }, intensity: 0.7 },
+        ],
+        keywords: ['град', 'hail'],
+    },
+    {
+        id: 'blizzard',
+        name: 'Метель',
+        icon: '🌬',
+        sky: 'snow',
+        grade: { shade: 1, tint: 'rgba(52,62,92,.2)' },
+        layers: [
+            { effect: 'snow', params: { wind: 0.75, size: 1.35 }, intensity: 1.35 },
+            { effect: 'groundm', params: { color: '216,224,244', level: 0.34 }, intensity: 1.2 },
+            { effect: 'motes', params: { color: '228,236,255', size: 0.6 }, intensity: 0.5 },
+        ],
+        keywords: ['метел', 'метёл', 'вьюга', 'пурга', 'blizzard', 'snowstorm'],
+    },
+    {
+        id: 'birthday',
+        name: 'Свечи и торт',
+        icon: '🎂',
+        sky: ['birthday', { id: 'candlelight', opacity: 0.9 }],
+        grade: { shade: 1.1, tint: 'rgba(96,44,18,.16)' },
+        layers: [
+            { effect: 'embers', params: { color: '255,198,128', size: 0.7 }, intensity: 0.95 },
+            { effect: 'motes', params: { color: '255,216,164', size: 0.8 }, intensity: 1 },
+            { effect: 'shimmer', params: { color: '255,206,150' }, intensity: 0.6 },
+        ],
+        keywords: ['день рождени', 'днюх', 'торт', 'именин', 'birthday cake', 'birthday'],
     },
 ];
 

@@ -45,9 +45,30 @@ Requires SillyTavern **1.12+**. No API, no external requests, nothing is written
 | `garden` | Green Garden | green leaves, pollen dust |
 | `sakura` | Sakura | petals, pink haze |
 | `arcane` | Magic | particles with tails, swirling sparks |
+| `cloudy` | Overcast | grey sky, drifting mist |
+| `sunny` | Sunny Day | warm light shafts, floating pollen |
+| `hail` | Hail | fast hail with bounces, ground mist |
+| `blizzard` | Blizzard | sideways snow, dense low mist |
+| `birthday` | Candles & Cake | candle halo, golden sparks |
 
 ![Desert](preview/preview-desert.jpg)
 ![Sakura](preview/preview-sakura.jpg)
+
+## Scene Panel integration
+
+If [Scene Panel](https://github.com/satsvi97/scene-panel) is installed, Magic Aura reads its scene state
+and picks the atmosphere by itself:
+
+| Scene Panel field | What it does |
+|---|---|
+| `weather` | picks the particles: storm → thunderstorm, rain → rain, snow → snow, hail → hail, blizzard → blizzard, overcast → overcast, clear → sunny |
+| `place` | picks the look: desert, forest, sea, city, temple/room, garden, sakura, park |
+| `timeOfDay` | night → night sky with stars, dawn → fog, sunset → warm light |
+| `mood` | adjusts the shade: tense/dark darker, tender/calm lighter |
+
+Nothing is written into Scene Panel, it is read only. Picking a scene manually in the panel or with
+`/aura` turns the sync off, so your chosen picture always wins. Turn it back on with
+“Sync with Scene Panel”.
 
 ## Controls
 

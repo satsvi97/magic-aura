@@ -74,6 +74,7 @@ export function createUI(api) {
                         ).join('')}
                     </div>
                     <div class="atmos-toggles">
+                        <label class="atmos-check"><input type="checkbox" data-atmos="syncPanel"><span></span>Синхронизация со Scene Panel</label>
                         <label class="atmos-check"><input type="checkbox" data-atmos="lite"><span></span>Lite-режим</label>
                         <label class="atmos-check"><input type="checkbox" data-atmos="autoMood"><span></span>Реагировать на текст</label>
                         <label class="atmos-check"><input type="checkbox" data-atmos="perChat"><span></span>Сцена у каждого чата</label>
@@ -228,7 +229,7 @@ export function createUI(api) {
                 if (out) out.textContent = sl.fmt(v);
             }
 
-            for (const key of ['lite', 'autoMood', 'perChat', 'showFab', 'debug']) {
+            for (const key of ['lite', 'autoMood', 'perChat', 'showFab', 'debug', 'syncPanel']) {
                 const el = p.querySelector(`[data-atmos="${key}"]`);
                 if (el) el.checked = !!s[key];
             }

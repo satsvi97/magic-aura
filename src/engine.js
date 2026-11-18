@@ -17,6 +17,18 @@ export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const rnd = (a, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
 export const pick = (arr) => arr[(Math.random() * arr.length) | 0];
 
+/**
+ * Порывы ветра — общая «погода» для всех падающих эффектов.
+ * Возвращает 0…1.8: долгие спокойные промежутки и редкие резкие порывы.
+ * @param {number} t время в секундах
+ * @param {number} seed сдвиг фазы, чтобы листья и снег не дули синхронно
+ */
+export function gust(t, seed = 0) {
+    const s = Math.sin(t * 0.21 + seed) * 0.55 + Math.sin(t * 0.07 + seed * 2.1) * 0.45;
+    const k = Math.max(0, s);
+    return Math.pow(k, 2.2) * 1.8;
+}
+
 const EFFECTS = new Map();
 const SKIES = new Map();
 
@@ -252,6 +264,14 @@ export class Engine {
         if (this.scene) this.rebuild();
     }
 
+    /** Настроение сцены: множитель затемнения (Scene Panel отдаёт «тон»). */
+    setMood(mood) {
+        const k = mood && Number.isFinite(mood.shadeK) ? clamp(mood.shadeK, 0.5, 2) : 1;
+        if (k === this.moodShadeK) return;
+        this.moodShadeK = k;
+        this.applyLook();
+    }
+
     /** 'behind' — слой под чатом (только фон), 'above' — частицы поверх текста. */
     setLayer(mode) {
         this.layer = mode === 'above' ? 'above' : 'behind';
@@ -285,7 +305,7 @@ export class Engine {
         this.root.style.opacity = op;
         if (this.fx) this.fx.style.opacity = op;
 
-        const shade = clamp(this.look.shade * (g.shade ?? 1), 0, 1);
+        const shade = clamp(this.look.shade * (g.shade ?? 1) * (this.moodShadeK || 1), 0, 1);
         if (this.nodes.shade) this.nodes.shade.style.opacity = String(shade);
         if (this.nodes.grade) {
             this.nodes.grade.style.background = g.tint || 'transparent';
@@ -328,6 +348,11 @@ export class Engine {
             div.style.background = css;
             const own = layer && typeof layer === 'object' && layer.opacity != null ? layer.opacity : 1;
             div.style.opacity = String(own * clamp(this.look.sky ?? 0.45, 0, 1));
+            /* необязательная маска: нужна, чтобы лучи света гасли книзу */
+            if (layer && typeof layer === 'object' && layer.mask) {
+                div.style.maskImage = layer.mask;
+                div.style.webkitMaskImage = layer.mask;
+            }
             sky.appendChild(div);
         }
     }

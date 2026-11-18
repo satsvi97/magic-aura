@@ -47,9 +47,21 @@ Kräver SillyTavern **1.12+**. Inget API, inga externa anrop, inget skrivs i din
 | `garden` | Grön trädgård | gröna löv, pollenstoft |
 | `sakura` | Sakura | kronblad, rosa dis |
 | `arcane` | Magi | partiklar med svansar, virvlande gnistor |
+| `cloudy` | Mulet | grå himmel, drivande dimma |
+| `sunny` | Solig dag | ljusstrålar, pollen i luften |
+| `hail` | Hagel | snabbt hagel med studs, dimma vid marken |
+| `blizzard` | Snöstorm | snö i sidled, tät låg dimma |
+| `birthday` | Ljus och tårta | ljussken, gyllene gnistor |
 
 ![Öken](preview/preview-desert.jpg)
 ![Sakura](preview/preview-sakura.jpg)
+
+## Integration med Scene Panel
+
+Om [Scene Panel](https://github.com/satsvi97/scene-panel) är installerad läser Magic Aura dess
+scenläge och väljer atmosfären själv: väder → partiklar, plats → utseende, tid på dygnet → himmel,
+ton → nedtoning. Inget skrivs till Scene Panel, det läses bara. Ett manuellt scenval stänger av
+synkroniseringen så att din bild alltid vinner.
 
 ## Styrning
 
