@@ -128,4 +128,4 @@ registerEffect({
 - Art and sound (when added): © Selena's Tavern, all rights reserved.
 - Inspired by *Nimbus: Scene Atmosphere* (Tavo). We liked the idea of weather above the chat; the engine, scenes, UI and palette here are written from scratch. No assets are copied.
 
-Made with love by **[Selena's Tavern](https://satsvi97.github.io/selena/)** · [Telegram](https://t.me/selenatavern)
+Made with love by **[Selena's Tavern](https://satsvi97.github.io/selena/)** · [Telegram](https://t.me/+vJVPtuqeHu85ZjU6)
