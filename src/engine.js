@@ -158,11 +158,29 @@ export class Engine {
 
         this.resize();
 
+        /* Наблюдатель за геометрией: реагирует, даже если анимация на паузе
+           (скрытая вкладка, выключенная сцена) — ST любит двигать панели. */
+        clearInterval(this._watch);
+        this._watch = setInterval(() => this._selfCheck(), 1200);
+
+        /* Плюс мгновенная реакция на действия в интерфейсе: после любого тапа
+           ST может переехать (панели, drawer), поэтому сверяемся через полсекунды. */
+        this._onUiAction = () => {
+            clearTimeout(this._uiTimer);
+            this._uiTimer = setTimeout(() => this._selfCheck(), 450);
+        };
+        document.addEventListener('pointerup', this._onUiAction, true);
+
         return root;
     }
 
     destroy() {
         this.stop();
+        clearInterval(this._watch);
+        this._watch = 0;
+        if (this._onUiAction) document.removeEventListener('pointerup', this._onUiAction, true);
+        this._onUiAction = null;
+        clearTimeout(this._uiTimer);
         window.removeEventListener('resize', this._onResize);
         window.visualViewport?.removeEventListener('resize', this._onResize);
         document.removeEventListener('visibilitychange', this._onVisibility);
@@ -208,6 +226,10 @@ export class Engine {
         if (rect.height > h) h = Math.round(rect.height);
         if (rect.width > w) w = Math.round(rect.width);
 
+        /* Слой мог «съехать» после того, как ST открыл панель: если у body или
+           выше появился transform, наш fixed-слой считается от него. Компенсируем. */
+        this._alignToViewport(rect);
+
         const changed = w !== this.w || h !== this.h || dpr !== this.dpr;
         this.w = w;
         this.h = h;
@@ -242,6 +264,56 @@ export class Engine {
         this.resize();
         clearTimeout(this._resizeTimer);
         this._resizeTimer = setTimeout(() => this.resize(), 160);
+    }
+
+    /**
+     * Если слой отрисовывается не от (0,0) — значит выше появился transform
+     * (ST так делает, когда двигает панели). Копим поправку и гасим сдвиг
+     * обратным translate. Считаем приращением, иначе получаем качели:
+     * применили компенсацию → слой на месте → «сдвига нет» → компенсацию сняли.
+     */
+    _alignToViewport(rect) {
+        const s = this._shift || (this._shift = { x: 0, y: 0 });
+        const dx = Math.round(rect.left);
+        const dy = Math.round(rect.top);
+        if (!dx && !dy) return;
+
+        s.x -= dx;
+        s.y -= dy;
+        const t = s.x || s.y ? `translate(${s.x}px, ${s.y}px)` : '';
+        for (const el of [this.root, this.fx, document.getElementById('atmos-ui')]) {
+            if (el && el.style.transform !== t) el.style.transform = t;
+        }
+    }
+
+    /** Проверка «слой на месте» — работает независимо от анимации. */
+    _selfCheck() {
+        if (!this.root) return;
+        const vv = window.visualViewport;
+        const de = document.documentElement;
+        const w = Math.max(Math.round(vv?.width || 0), window.innerWidth || 0, de.clientWidth || 0);
+        const h = Math.max(Math.round(vv?.height || 0), window.innerHeight || 0, de.clientHeight || 0);
+        const rect = this.root.getBoundingClientRect();
+        const rw = Math.max(w, Math.round(rect.width));
+        const rh = Math.max(h, Math.round(rect.height));
+        if (rw && rh && (rw !== this.w || rh !== this.h)) this.resize();
+        else this._alignToViewport(rect);
+    }
+
+    /** Полная перерисовка слоя: размер, небо, эффекты. Кнопка «Починить слой». */
+    refreshLayout() {
+        if (!this.root) return;
+        this._shift = { x: 0, y: 0 };
+        for (const el of [this.root, this.fx]) if (el) el.style.transform = '';
+        this.w = -1;
+        this.h = -1;
+        this.resize();
+        if (this.scene) {
+            this.applySky(this.scene);
+            this.applyLook();
+            this.rebuild();
+            this.resume();
+        }
     }
 
     _onVisibility() {
@@ -432,16 +504,7 @@ export class Engine {
         /* Раз в полсекунды сверяем размеры с вьюпортом: в окнах-приложениях
            и при смене масштаба resize-событие может не прийти, а слой обязан
            совпадать с окном. Иначе картинка «съезжает». */
-        if ((this._tick = (this._tick || 0) + 1) % 30 === 0 && this.root) {
-            const vv = window.visualViewport;
-            const de = document.documentElement;
-            const w = Math.max(Math.round(vv?.width || 0), window.innerWidth || 0, de.clientWidth || 0);
-            const h = Math.max(Math.round(vv?.height || 0), window.innerHeight || 0, de.clientHeight || 0);
-            const rect = this.root.getBoundingClientRect();
-            const rw = Math.max(w, Math.round(rect.width));
-            const rh = Math.max(h, Math.round(rect.height));
-            if (rw && rh && (rw !== this.w || rh !== this.h)) this.resize();
-        }
+        if ((this._tick = (this._tick || 0) + 1) % 30 === 0) this._selfCheck();
 
         if (!this.last) this.last = ts;
         let dt = (ts - this.last) / 1000;

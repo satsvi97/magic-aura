@@ -89,6 +89,7 @@ export function createUI(api) {
                                 <option value="left">слева</option>
                             </select>
                         </label>
+                        <button type="button" class="atmos-btn" data-atmos="repair">Починить слой</button>
                         <button type="button" class="atmos-btn" data-atmos="reset">Сброс</button>
                     </div>
                     <div class="atmos-credit">
@@ -111,6 +112,8 @@ export function createUI(api) {
             }
             const btn = e.target.closest('[data-atmos="reset"]');
             if (btn) api.reset();
+            const repair = e.target.closest('[data-atmos="repair"]');
+            if (repair) api.repair();
             const layerBtn = e.target.closest('[data-atmos-layer]');
             if (layerBtn) api.patch('layer', layerBtn.dataset.atmosLayer);
         });

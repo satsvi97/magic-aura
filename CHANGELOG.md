@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.2 — self-healing layer geometry
+
+- **The layer now corrects its own position.** When SillyTavern moves its panels (mobile drawer,
+  sidebar, moving UI) it can leave a `transform` on an ancestor, and a `position: fixed` overlay
+  then drifts and gets clipped. The engine measures the layer's real position on every tap, once a
+  second and every half second while animating, and compensates with an opposite translation.
+- **New button «Починить слой»** in the settings panel — re-measures and redraws the layer instantly,
+  without reloading the whole app.
+- The compensation accumulates instead of re-measuring from scratch, so it no longer oscillates
+  (apply → looks fine → remove → shift back).
+
 ## 0.3.1 — mobile compositing fixes
 
 - **Light shafts rebuilt on canvas.** The `sunny` scene used a CSS `mask-image` over a

@@ -98,7 +98,7 @@ function rememberChat() {
 
 const engine = new Engine();
 
-const VERSION = '0.3.1';
+const VERSION = '0.3.2';
 
 const ui = createUI({
     version: VERSION,
@@ -116,6 +116,11 @@ const ui = createUI({
         if (key === 'density') engine.rebuild();
         persist();
         ui.refresh();
+    },
+    repair: () => {
+        engine.refreshLayout();
+        ui.refresh();
+        toast('Слой перерисован');
     },
     reset: () => {
         const scene = settings.scene;
