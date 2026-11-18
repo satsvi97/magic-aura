@@ -15,7 +15,7 @@ Magic Aura is not affiliated with, endorsed by, or connected to Tavo or the Nimb
 ## Author
 
 Made with love by **[Selena's Tavern](https://satsvi97.github.io/selena/)**.
-Telegram: [@selenatavern](https://t.me/selenatavern)
+Telegram: [@selenatavern](https://t.me/+vJVPtuqeHu85ZjU6)
 
 ## Third-party
 
@@ -39,4 +39,4 @@ Textures, sounds and icons will be drawn and recorded by Selena's Tavern specifi
 
 Magic Aura не связан с Tavo и авторами Nimbus, не одобрен ими и не поддерживается ими.
 
-Сделано с любовью командой **[Selena's Tavern](https://satsvi97.github.io/selena/)** · [@selenatavern](https://t.me/selenatavern)
+Сделано с любовью командой **[Selena's Tavern](https://satsvi97.github.io/selena/)** · [@selenatavern](https://t.me/+vJVPtuqeHu85ZjU6)

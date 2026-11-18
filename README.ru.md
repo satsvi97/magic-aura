@@ -149,4 +149,4 @@ registerEffect({
 - Графика и звук (когда появятся): © Selena's Tavern, все права защищены.
 - Вдохновлено плагином *Nimbus: Scene Atmosphere* (Tavo). Идея «погода над чатом» — оттуда, всё остальное (движок, сцены, интерфейс, палитра) написано с нуля. Ассеты не копировались.
 
-Сделано с любовью **[Selena's Tavern](https://satsvi97.github.io/selena/)** · [Telegram](https://t.me/selenatavern)
+Сделано с любовью **[Selena's Tavern](https://satsvi97.github.io/selena/)** · [Telegram](https://t.me/+vJVPtuqeHu85ZjU6)
