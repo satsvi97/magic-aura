@@ -13,6 +13,9 @@
     /* запасной вариант: настоящий размер выставляет движок в пикселях */
     width: 100vw;
     height: 100vh;
+    /* мобильные вебвью занижают viewport после клавиатуры — CSS знает правду */
+    min-height: 100vh;
+    min-height: 100dvh;
     overflow: hidden;
     pointer-events: none;
     contain: layout style;
@@ -677,16 +680,28 @@
     border-color: rgba(255, 158, 188, 0.5);
 }
 
+.atmos-mobile-only {
+    display: none;
+}
+
 @media (max-width: 1000px) {
+    /* На телефонах кнопка в углу перекрывает отправку — там вход через меню
+       «Расширения», поэтому плавающую кнопку и поповер убираем совсем. */
+    .atmos-fab,
     .atmos-pop {
-        width: min(76vw, 300px);
-        bottom: 150px;
-    }
-    .atmos-fab {
-        bottom: 104px;
+        display: none !important;
     }
     #atmos-settings .atmos-grid {
         grid-template-columns: 1fr;
+    }
+    #atmos-settings .atmos-desktop-only {
+        display: none !important;
+    }
+    #atmos-settings .atmos-mobile-only {
+        display: block;
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--at-muted);
     }
 }
 

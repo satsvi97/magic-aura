@@ -175,25 +175,31 @@ export class Engine {
      */
     resize() {
         if (!this.root) return;
-        /* Размер берём у visualViewport: это ровно то, что человек видит.
-           documentElement в ST на узких окнах врёт (html с transform и нулевой
-           высотой), из-за этого слой получался 2366×1344 в окне 600×600
-           и градиент показывал случайный кусок. */
+        /* Мобильные вебвью врут: после открытия клавиатуры visualViewport и
+           innerHeight остаются заниженными, и слой обрывался над полем ввода.
+           Поэтому берём максимум из всех источников и, главное, перепроверяем
+           реальную высоту самого слоя (её может поднять CSS min-height:100dvh). */
         const vv = window.visualViewport;
-        const w = Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 360);
-        const h = Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 640);
+        const de = document.documentElement;
+        let w = Math.round(Math.max(vv?.width || 0, window.innerWidth || 0, de.clientWidth || 0, 360));
+        let h = Math.round(Math.max(vv?.height || 0, window.innerHeight || 0, de.clientHeight || 0, 640));
         const dpr = this.lite ? 1 : Math.min(window.devicePixelRatio || 1, DPR_CAP);
-
-        const changed = w !== this.w || h !== this.h || dpr !== this.dpr;
-        this.w = w;
-        this.h = h;
-        this.dpr = dpr;
 
         for (const el of [this.root, this.fx, document.getElementById('atmos-ui')]) {
             if (!el) continue;
             el.style.width = w + 'px';
             el.style.height = h + 'px';
         }
+
+        /* CSS мог сделать слой выше (100dvh) — подхватываем фактический размер */
+        const rect = this.root.getBoundingClientRect();
+        if (rect.height > h) h = Math.round(rect.height);
+        if (rect.width > w) w = Math.round(rect.width);
+
+        const changed = w !== this.w || h !== this.h || dpr !== this.dpr;
+        this.w = w;
+        this.h = h;
+        this.dpr = dpr;
 
         if (this.canvas) {
             const cw = Math.round(w * dpr);
@@ -401,11 +407,15 @@ export class Engine {
         /* Раз в полсекунды сверяем размеры с вьюпортом: в окнах-приложениях
            и при смене масштаба resize-событие может не прийти, а слой обязан
            совпадать с окном. Иначе картинка «съезжает». */
-        if ((this._tick = (this._tick || 0) + 1) % 30 === 0) {
+        if ((this._tick = (this._tick || 0) + 1) % 30 === 0 && this.root) {
             const vv = window.visualViewport;
-            const w = Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 0);
-            const h = Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 0);
-            if (w && h && (w !== this.w || h !== this.h)) this.resize();
+            const de = document.documentElement;
+            const w = Math.max(Math.round(vv?.width || 0), window.innerWidth || 0, de.clientWidth || 0);
+            const h = Math.max(Math.round(vv?.height || 0), window.innerHeight || 0, de.clientHeight || 0);
+            const rect = this.root.getBoundingClientRect();
+            const rw = Math.max(w, Math.round(rect.width));
+            const rh = Math.max(h, Math.round(rect.height));
+            if (rw && rh && (rw !== this.w || rh !== this.h)) this.resize();
         }
 
         if (!this.last) this.last = ts;

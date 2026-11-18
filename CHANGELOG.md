@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.1 — mobile and resize fixes
+
+- **Layer no longer stops above the message input on phones.** Mobile webviews under-report the
+  viewport (after the keyboard opens `visualViewport`/`innerHeight` stay small); the layer now takes
+  the maximum of all size sources, re-measures its own box and has a `100dvh` floor in CSS.
+- **No floating button on phones/tablets.** Below 1000 px wide the corner button and its popover are
+  hidden — it covered the send button. Scenes live in the extension settings drawer, like other
+  extensions. Desktop keeps the button.
+- **Magic trails can no longer streak across the screen** after a resize, rotation or address-bar
+  collapse: trail particles are re-seeded instead of keeping points in the old coordinate space.
+- Settings panel: mobile hint in the drawer, desktop-only controls hidden on phones.
+
 ## 0.2.0 — first public release
 
 - **17 scenes**: night, storm, rainy, snow, fog, campfire, candle, deep, neon, starfall, forest, desert, desert_night, autumn, garden, sakura, arcane.

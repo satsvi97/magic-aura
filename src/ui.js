@@ -77,11 +77,12 @@ export function createUI(api) {
                         <label class="atmos-check"><input type="checkbox" data-atmos="lite"><span></span>Lite-режим</label>
                         <label class="atmos-check"><input type="checkbox" data-atmos="autoMood"><span></span>Реагировать на текст</label>
                         <label class="atmos-check"><input type="checkbox" data-atmos="perChat"><span></span>Сцена у каждого чата</label>
-                        <label class="atmos-check"><input type="checkbox" data-atmos="showFab"><span></span>Кнопка на экране</label>
+                        <label class="atmos-check atmos-desktop-only"><input type="checkbox" data-atmos="showFab"><span></span>Кнопка на экране</label>
                         <label class="atmos-check"><input type="checkbox" data-atmos="debug"><span></span>Границы слоя (диагностика)</label>
                     </div>
+                    <div class="atmos-mobile-only">На телефоне кнопка в углу скрыта, чтобы не мешать отправке. Сцены — здесь.</div>
                     <div class="atmos-foot">
-                        <label class="atmos-mini">Кнопка
+                        <label class="atmos-mini atmos-desktop-only">Кнопка
                             <select data-atmos="fabPos">
                                 <option value="right">справа</option>
                                 <option value="left">слева</option>

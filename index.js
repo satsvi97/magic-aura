@@ -96,7 +96,7 @@ function rememberChat() {
 
 const engine = new Engine();
 
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 
 const ui = createUI({
     version: VERSION,
