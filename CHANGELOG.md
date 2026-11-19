@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.4 — smaller branches
+
+- **Branches are now small twigs in the top corners** instead of half-screen canopies: the length
+  is capped against both width and height (13% / 10%) and the stroke is thinner, so they read as a
+  hint and never crawl over the chat.
+- Length is no longer based on the shorter side alone, so on phones the twigs stay visible while
+  staying proportional.
+
 ## 0.3.3 — branches for autumn and sakura
 
 - **New effect `branches`:** dark bare-branch silhouettes hanging from the top corners, generated

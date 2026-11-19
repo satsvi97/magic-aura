@@ -65,8 +65,11 @@ registerEffect({
             const g = c.getContext('2d');
             g.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-            const len = Math.min(w, h) * 0.26 * scale;
-            const width = Math.max(5, Math.min(w, h) * 0.016) * scale;
+            /* Ветви — только намёк в углах, поэтому длина привязана к меньшей
+               стороне и намеренно скромная: на телефоне они не должны лезть
+               в чат. scale из сцены подкручивает ещё и от себя. */
+            const len = Math.min(w * 0.13, h * 0.10) * scale;
+            const width = Math.max(2, Math.min(w, h) * 0.006) * scale;
 
             if (sides.includes('left')) {
                 branch(g, -w * 0.03, -h * 0.04, rnd(0.55, 0.8), len * 1.15, width, depth, color, alpha);
