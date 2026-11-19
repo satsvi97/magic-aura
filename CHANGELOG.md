@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.5 — fewer, smaller branches
+
+- Cut the branches down again: length is now capped at 10% of width / 7.5% of height, strokes are
+  thinner, so only short twigs peek from the top corners.
+
 ## 0.3.4 — smaller branches
 
 - **Branches are now small twigs in the top corners** instead of half-screen canopies: the length
