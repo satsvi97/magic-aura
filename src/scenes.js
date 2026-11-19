@@ -12,6 +12,7 @@ import './effects/leaves.js';
 import './effects/magic.js';
 import './effects/ash.js';
 import './effects/rays.js';
+import './effects/branches.js';
 
 /* ---------- небо ---------- */
 
@@ -207,6 +208,7 @@ export const SCENES = [
         sky: 'autumn',
         grade: { shade: 1, tint: 'rgba(92,42,16,.16)' },
         layers: [
+            { effect: 'branches', params: { color: '10,7,9', alpha: 0.85, depth: 7, scale: 1.1, sides: ['left', 'right'] } },
             { effect: 'leaves', params: { shape: 'leaf', size: 1, count: 34 } },
             { effect: 'mist', params: { color: '164,124,96' }, intensity: 0.45 },
             { effect: 'motes', params: { color: '255,196,130', size: 0.6 }, intensity: 0.45 },
@@ -232,6 +234,7 @@ export const SCENES = [
         sky: 'sakura',
         grade: { shade: 1, tint: 'rgba(122,40,82,.14)' },
         layers: [
+            { effect: 'branches', params: { color: '20,12,20', alpha: 0.8, depth: 7, scale: 1.05, sides: ['left', 'right'] } },
             { effect: 'leaves', params: { shape: 'petal', size: 0.95, count: 48 } },
             { effect: 'mist', params: { color: '232,182,204' }, intensity: 0.4 },
             { effect: 'motes', params: { color: '255,214,232', size: 0.55 }, intensity: 0.5 },

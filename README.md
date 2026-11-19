@@ -41,7 +41,7 @@ Requires SillyTavern **1.12+**. No API, no external requests, nothing is written
 | `forest` | Enchanted Forest | fireflies, mist, green grade |
 | `desert` | Desert | dunes, blowing sand, heat shimmer |
 | `desert_night` | Desert at Night | stars over dunes, cold sand |
-| `autumn` | Autumn Leaves | falling maple leaves, warm haze |
+| `autumn` | Autumn Leaves | bare branches from the top, falling leaves, warm haze |
 | `garden` | Green Garden | green leaves, pollen dust |
 | `sakura` | Sakura | petals, pink haze |
 | `arcane` | Magic | particles with tails, swirling sparks |

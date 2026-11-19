@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.3 — branches for autumn and sakura
+
+- **New effect `branches`:** dark bare-branch silhouettes hanging from the top corners, generated
+  procedurally (recursive tree drawn once into an offscreen canvas), so they scale to any screen
+  without assets and cost nothing per frame.
+- Added to `autumn` and `sakura` scenes; the effect is parameterised (`color`, `alpha`, `depth`,
+  `scale`, `sides: left/right/top`) so it can be dropped into any scene.
+
 ## 0.3.2 — self-healing layer geometry
 
 - **The layer now corrects its own position.** When SillyTavern moves its panels (mobile drawer,
