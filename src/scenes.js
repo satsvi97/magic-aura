@@ -323,17 +323,22 @@ export const SCENES = [
 
 export const SCENE_BY_ID = new Map(SCENES.map((s) => [s.id, s]));
 
-/** «Ночной лес, дождь» -> первая сцена, чьё слово встретилось раньше всех. */
+/** «Ночной лес, дождь» -> первая сцена, чьё слово встретилось раньше всех.
+ *  При равенстве позиции выигрывает более длинное слово: «звёздопад» важнее «звёзд». */
 export function matchScene(text) {
     if (!text) return null;
-    const low = String(text).toLowerCase();
+    const low = String(text).toLowerCase().replace(/ё/g, 'е');
     let best = null;
     let bestAt = Infinity;
+    let bestLen = 0;
     for (const scene of SCENES) {
-        for (const kw of scene.keywords || []) {
+        for (const raw of scene.keywords || []) {
+            const kw = raw.toLowerCase().replace(/ё/g, 'е');
             const at = low.indexOf(kw);
-            if (at >= 0 && at < bestAt) {
+            if (at < 0) continue;
+            if (at < bestAt || (at === bestAt && kw.length > bestLen)) {
                 bestAt = at;
+                bestLen = kw.length;
                 best = scene;
             }
         }

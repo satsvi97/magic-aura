@@ -63,6 +63,27 @@ scenläge och väljer atmosfären själv: väder → partiklar, plats → utseen
 ton → nedtoning. Inget skrivs till Scene Panel, det läses bara. Ett manuellt scenval stänger av
 synkroniseringen så att din bild alltid vinner.
 
+Sedan 0.4.0 fungerar länken åt båda hållen: Scene Panel skickar `scene-panel:update` vid varje
+ändring och Magic Aura tillämpar scenen direkt i stället för att vänta på sin pollning varannan
+sekund. Panelen har sin egen kryssruta **"✨ scenbakgrund (Magic Aura)"**, så synken kan slås på
+och av från båda håll.
+
+Ett litet publikt API för grann tillägg:
+
+```js
+window.MagicAura.getState();          // { version, scene, syncPanel, … }
+window.MagicAura.sync();              // läs om Scene Panel nu
+window.MagicAura.setSyncPanel(false); // sluta lyssna på panelen
+window.MagicAura.setScene('storm');   // manuellt val — pausar synken
+window.MagicAura.open();              // snabbvalsmeny
+```
+
+**Vilken scen som helst, även framtida.** Om väder- och platskartorna inte känner igen ett ord matchar
+Magic Aura det mot `keywords` för alla scener i `scenes.js`, så en ny scen börjar fungera från Scene
+Panel utan att integrationen ändras. En scen kan också namnges direkt med det egna fältet `аура=…` i
+taggen: `[[scene: аура=сакура]]` (id, namn eller valfritt ord). Det gäller direkt; nästa ändring av
+väder eller plats tar över igen.
+
 ## Styrning
 
 - **Knappen i hörnet** — snabbval av scen (`✕` stänger av).
@@ -112,6 +133,8 @@ synkroniseringen så att din bild alltid vinner.
     keywords: ['ord', 'word'],
 }
 ```
+
+`keywords` är det som Scene Panel och "Reagera på text" känner igen — en ny scen behöver inget mer.
 
 En effekt ligger i `src/effects/*.js`:
 

@@ -70,6 +70,26 @@ Nothing is written into Scene Panel, it is read only. Picking a scene manually i
 `/aura` turns the sync off, so your chosen picture always wins. Turn it back on with
 “Sync with Scene Panel”.
 
+Since 0.4.0 the link works both ways: Scene Panel sends `scene-panel:update` after every change and
+Magic Aura applies it at once instead of waiting for its 2-second poll. Scene Panel has its own
+**“✨ scene background (Magic Aura)”** checkbox, so the sync can be turned on and off from either side.
+
+A small public API for neighbouring extensions:
+
+```js
+window.MagicAura.getState();          // { version, scene, syncPanel, … }
+window.MagicAura.sync();              // re-read Scene Panel right now
+window.MagicAura.setSyncPanel(false); // stop listening to the panel
+window.MagicAura.setScene('storm');   // manual pick — pauses the sync
+window.MagicAura.open();              // quick scene picker
+```
+
+**Any scene, including future ones.** If the weather and place maps don't know a word, Magic Aura
+matches it against the `keywords` of every scene in `scenes.js`, so a new scene starts working from
+Scene Panel without touching the integration. A scene can also be named outright with the custom
+field `аура=…` in the tag: `[[scene: аура=сакура]]` (id, name or any word). It applies right then;
+the next weather/place change takes over again.
+
 ## Controls
 
 - **Corner button** — quick scene picker (`✕` disables the aura).
@@ -119,6 +139,8 @@ Nothing is written into Scene Panel, it is read only. Picking a scene manually i
     keywords: ['word', 'слово'],
 }
 ```
+
+`keywords` are what Scene Panel and “React to text” recognise — a new scene needs nothing else.
 
 An effect lives in `src/effects/*.js`:
 

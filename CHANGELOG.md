@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.0 — two-way link with Scene Panel
+
+- **Scene Panel now talks back.** The panel dispatches `scene-panel:update` after every scene change
+  (tag, field edit, reset, chat switch), and Magic Aura applies it immediately instead of waiting for
+  its two-second metadata poll. The poll stays as a fallback for older panel versions.
+- **Public API `window.MagicAura`:** `getState()`, `sync(force?)`, `setSyncPanel(on)`, `setScene(id)`,
+  `open()`, plus the `magic-aura:ready` and `magic-aura:state` events — so other extensions can read
+  and drive the atmosphere without touching internals.
+- Scene Panel has its own **"✨ scene background (Magic Aura)"** checkbox and a status line
+  (“sync on / paused / not installed”); turning it off calls `setSyncPanel(false)`, turning it on
+  pulls the current scene at once.
+- **New scenes no longer need a mapping edit.** Anything the weather/place maps miss is matched
+  against every scene's own `keywords`, so a scene added to `scenes.js` starts working from Scene
+  Panel immediately. A scene can also be named outright with the custom field `аура=…` (id, name or
+  word: `аура=сакура`, `аура=торт`); re-declaring it re-applies the scene, while a weather/place
+  change afterwards takes over again.
+- `matchScene` now prefers the longest keyword on a position tie (`звёздопад` beats `звёзд`) and
+  treats `ё` and `е` as the same letter.
+- Fixed: a place of just “море” (sea) was not recognised and fell through to the default sky.
+
 ## 0.3.5 — fewer, smaller branches
 
 - Cut the branches down again: length is now capped at 10% of width / 7.5% of height, strokes are

@@ -7,7 +7,7 @@
 import { Engine } from './src/engine.js';
 import { SCENES, SCENE_BY_ID, findScene, matchScene, OFF_RE } from './src/scenes.js';
 import { createUI } from './src/ui.js';
-import { readPanelState, deriveAtmosphere, panelKey } from './src/scenepanel.js';
+import { readPanelState, deriveAtmosphere, panelKey, auraHint } from './src/scenepanel.js';
 
 const STORE = 'atmos';
 
@@ -98,7 +98,7 @@ function rememberChat() {
 
 const engine = new Engine();
 
-const VERSION = '0.3.5';
+const VERSION = '0.4.0';
 
 const ui = createUI({
     version: VERSION,
@@ -155,6 +155,7 @@ function afterChange(key) {
         syncFromPanel(true);
     }
     ui.refresh();
+    announceState();
 }
 
 /**
@@ -189,28 +190,107 @@ function applyScene(id, opts = {}) {
         persist();
     }
     ui.refresh();
+    announceState();
 }
 
 /* ---------- Scene Panel ---------- */
 
 let panelKeyCache = '';
+let lastAuraHint = null;
 
-function syncFromPanel(force = false) {
+function syncFromPanel(force = false, fresh = false) {
     if (!ctx || !settings.enabled || !settings.syncPanel) return;
     const state = readPanelState(ctx);
     if (!state) return;
 
     const key = panelKey(state);
-    if (!force && key === panelKeyCache) return;
+    if (!force && !fresh && key === panelKeyCache) return;
     panelKeyCache = key;
 
-    const derived = deriveAtmosphere(state);
+    /* аура=… в доп. полях — указание конкретной сцены. Применяется, когда
+       его назвали заново (fresh), при принудительном чтении или при смене
+       значения; в остальное время снова решают погода и место. */
+    const hint = auraHint(state);
+    const useExplicit = force || fresh || hint !== lastAuraHint;
+    lastAuraHint = hint;
+
+    const derived = deriveAtmosphere(state, { useExplicit });
     if (!derived) return;
 
     engine.setMood({ shadeK: derived.shadeK });
     if (derived.sceneId && derived.sceneId !== settings.scene) {
         applyScene(derived.sceneId, { save: false });
     }
+}
+
+/* ---------- публичное API ---------- */
+
+/* Соседние расширения (Scene Panel) могут спросить состояние и попросить
+   перечитать сцену. Это единственная точка входа: window.MagicAura. */
+
+function apiState() {
+    return {
+        version: VERSION,
+        ready: true,
+        enabled: !!settings.enabled,
+        scene: settings.scene || null,
+        sceneName: settings.scene ? SCENE_BY_ID.get(settings.scene)?.name || null : null,
+        layer: settings.layer,
+        syncPanel: !!settings.syncPanel,
+        panel: Boolean(readPanelState(ctx)),
+    };
+}
+
+let stateQueued = false;
+
+/* Сообщаем о смене состояния один раз за тик — без шторма событий на ползунках. */
+function announceState() {
+    if (stateQueued) return;
+    stateQueued = true;
+    queueMicrotask(() => {
+        stateQueued = false;
+        try {
+            window.dispatchEvent(new CustomEvent('magic-aura:state', { detail: apiState() }));
+        } catch {
+            /* пусто */
+        }
+    });
+}
+
+const api = {
+    version: VERSION,
+    getState: apiState,
+    /* Ручной выбор сцены: синхронизация со Scene Panel выключается — как и в UI. */
+    setScene(id) {
+        settings.enabled = true;
+        applyScene(id, { user: true });
+        return settings.scene;
+    },
+    /* Перечитать состояние Scene Panel сейчас, не дожидаясь опроса.
+       fresh=true — сцену назвали только что, применить её даже без изменений. */
+    sync(force = false, fresh = false) {
+        syncFromPanel(force === true, fresh === true);
+        return apiState();
+    },
+    /* Включить или выключить чтение Scene Panel. */
+    setSyncPanel(on) {
+        settings.syncPanel = !!on;
+        persist();
+        if (settings.syncPanel) syncFromPanel(true);
+        ui.refresh();
+        announceState();
+        return settings.syncPanel;
+    },
+    /* Открыть быстрый выбор сцены у кнопки в углу. */
+    open() {
+        ui.togglePop(true);
+    },
+};
+
+/* Scene Panel шлёт это событие после каждого изменения сцены.
+   detail.fresh — сцену аура=… назвали именно сейчас. */
+function onPanelUpdate(e) {
+    syncFromPanel(false, Boolean(e?.detail?.fresh));
 }
 
 /* ---------- события ST ---------- */
@@ -249,6 +329,7 @@ function onMessageReceived(messageId) {
 }
 
 function bindEvents() {
+    window.addEventListener('scene-panel:update', onPanelUpdate);
     if (!ctx?.eventSource) return;
     const types = ctx.eventTypes || {};
     if (types.CHAT_CHANGED) ctx.eventSource.on(types.CHAT_CHANGED, onChatChanged);
@@ -376,6 +457,15 @@ async function boot() {
     startPanelWatch();
     ui.refresh();
 
+    /* Публичное API и оповещение соседей — после загрузки настроек и чата. */
+    window.MagicAura = api;
+    try {
+        window.dispatchEvent(new CustomEvent('magic-aura:ready', { detail: apiState() }));
+    } catch {
+        /* пусто */
+    }
+    announceState();
+
     console.log('[Magic Aura] готово. Сцен:', SCENES.length);
 }
 
@@ -384,6 +474,8 @@ boot();
 /* на случай, если ST захочет перезагрузить расширение без перезапуска страницы */
 export function unload() {
     stopPanelWatch();
+    window.removeEventListener('scene-panel:update', onPanelUpdate);
+    if (window.MagicAura === api) delete window.MagicAura;
     engine.destroy();
     document.getElementById('atmos-settings')?.remove();
     document.getElementById('atmos-ui')?.remove();
