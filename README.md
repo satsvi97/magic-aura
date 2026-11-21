@@ -61,10 +61,12 @@ and picks the atmosphere by itself:
 
 | Scene Panel field | What it does |
 |---|---|
-| `weather` | picks the particles: storm → thunderstorm, rain → rain, snow → snow, hail → hail, blizzard → blizzard, overcast → overcast, clear → sunny |
+| `weather` | heavy weather owns the picture: storm, rain, snow, hail, blizzard; overcast / clear only pick the sky when place and time say nothing |
 | `place` | picks the look: desert, forest, sea, city, temple/room, garden, sakura, park |
-| `timeOfDay` | night → night sky with stars, dawn → fog, sunset → warm light |
+| `timeOfDay` | night → night sky with stars, dawn → fog, sunset → warm light; neutral weather never overrides these |
 | `mood` | adjusts the shade: tense/dark darker, tender/calm lighter |
+
+Scene changes fade smoothly: particles cross-fade in ≈0.55 s, the sky in ≈0.8 s.
 
 Nothing is written into Scene Panel, it is read only. Picking a scene manually in the panel or with
 `/aura` turns the sync off, so your chosen picture always wins. Turn it back on with

@@ -64,6 +64,19 @@
     transition: opacity 0.8s ease;
 }
 
+/* два слоя частиц: пока один проявляется, второй гаснет — смена сцены без рывка */
+.atmos-pane {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.55s ease;
+    will-change: opacity;
+}
+
+.atmos-pane.on {
+    opacity: 1;
+}
+
 .atmos-canvas {
     display: block;
     width: 100%;
@@ -508,6 +521,14 @@
 
 /* ---------- низ панели ---------- */
 
+/* что прочитано из Scene Panel и во что это превратилось */
+#atmos-settings .atmos-panel-src {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--at-muted);
+    margin: -2px 0 8px;
+}
+
 #atmos-settings .atmos-foot {
     margin-top: 12px;
     padding-top: 10px;
@@ -707,6 +728,8 @@
 @media (prefers-reduced-motion: reduce) {
     .atmos-pop,
     .atmos-fab,
+    .atmos-pane,
+    .atmos-sky-layer,
     #atmos-root {
         transition: none;
     }

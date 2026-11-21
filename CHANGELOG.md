@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.0 — smooth scene changes, smarter Scene Panel picks
+
+- **Scenes now dissolve into each other.** Particles live in two stacked canvases: the new scene is
+  built in the second one, CSS fades the old out and the new in (~0.55 s), and the sky gradients
+  cross-fade (~0.8 s). No flash, no mist jumping from full to zero.
+- **Night no longer turns into a grey day.** Neutral weather (`cloudy`, `clear` / `sunny`) cannot
+  override place and time of day any more: night → night sky, dawn → fog, sunset → warm light.
+  Storms, rain, snow, hail and blizzard still take the whole picture. Interiors such as
+  “башня”, “замок”, “дворец”, “храм”, “комната” now read as a candlelit room instead of falling
+  through to overcast.
+- **Text matching is scored**, not “first keyword wins”: the scene with the most matching words
+  wins, and words near the start of a message weigh a little more. “Night in a tower” stops
+  turning into a forest with fireflies just because “forest” was mentioned once.
+- With the **Debug** setting on, the console prints the Scene Panel state and the scene chosen
+  from it — enough to see why a particular sky won.
+
 ## 0.4.0 — two-way link with Scene Panel
 
 - **Scene Panel now talks back.** The panel dispatches `scene-panel:update` after every scene change

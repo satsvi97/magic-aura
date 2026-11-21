@@ -69,14 +69,16 @@ export class Engine {
         this.root = null;
         /** @type {HTMLElement|null} */
         this.fx = null;
-        /** @type {HTMLCanvasElement|null} */
-        this.canvas = null;
+        /** Два слоя частиц: пока новый проявляется, старый гаснет. */
+        this.panes = [];
+        this.active = 0;
         /** @type {CanvasRenderingContext2D|null} */
         this.ctx = null;
-        /** @type {Array<{def: object, inst: object}>} */
-        this.instances = [];
         /** @type {object|null} */
         this.scene = null;
+        this._skyKey = '';
+        this._skyLayers = [];
+        this._swapTimer = 0;
 
         this.w = 0;
         this.h = 0;
@@ -124,7 +126,11 @@ export class Engine {
         fx.id = 'atmos-fx';
         fx.setAttribute('aria-hidden', 'true');
         fx.className = 'atmos-fx off';
-        fx.innerHTML = '<canvas class="atmos-canvas"></canvas><div class="atmos-debug"></div>';
+        fx.innerHTML = `
+            <div class="atmos-pane"><canvas class="atmos-canvas"></canvas></div>
+            <div class="atmos-pane"><canvas class="atmos-canvas"></canvas></div>
+            <div class="atmos-debug"></div>
+        `;
 
         document.body.appendChild(root);
         document.body.appendChild(fx);
@@ -133,8 +139,16 @@ export class Engine {
         this.fx = fx;
         this.setLayer(this.layer);
 
-        this.canvas = fx.querySelector('.atmos-canvas');
-        this.ctx = this.canvas.getContext('2d', { alpha: true });
+        /* Два независимых слоя частиц. Переключение сцены строит новую сцену
+           во втором, а CSS плавно гасит старый и проявляет новый. */
+        this.panes = [...fx.querySelectorAll('.atmos-pane')].map((wrap) => {
+            const canvas = wrap.querySelector('.atmos-canvas');
+            return { wrap, canvas, ctx: canvas.getContext('2d', { alpha: true }), inst: [] };
+        });
+        this.active = 0;
+        this.panes[0]?.wrap.classList.add('on');
+        this.ctx = this.panes[0]?.ctx || null;
+
         this.nodes = {
             sky: root.querySelector('.atmos-sky'),
             grade: root.querySelector('.atmos-grade'),
@@ -178,6 +192,8 @@ export class Engine {
         this.stop();
         clearInterval(this._watch);
         this._watch = 0;
+        clearTimeout(this._swapTimer);
+        this._swapTimer = 0;
         if (this._onUiAction) document.removeEventListener('pointerup', this._onUiAction, true);
         this._onUiAction = null;
         clearTimeout(this._uiTimer);
@@ -192,8 +208,11 @@ export class Engine {
         if (this.fx) this.fx.remove();
         this.root = null;
         this.fx = null;
-        this.canvas = null;
+        this.panes = [];
+        this.active = 0;
         this.ctx = null;
+        this._skyKey = '';
+        this._skyLayers = [];
     }
 
     /* ---------- размеры ---------- */
@@ -235,25 +254,30 @@ export class Engine {
         this.h = h;
         this.dpr = dpr;
 
-        if (this.canvas) {
-            const cw = Math.round(w * dpr);
-            const ch = Math.round(h * dpr);
-            if (this.canvas.width !== cw) this.canvas.width = cw;
-            if (this.canvas.height !== ch) this.canvas.height = ch;
+        const cw = Math.round(w * dpr);
+        const ch = Math.round(h * dpr);
+        for (const pane of this.panes) {
+            const canvas = pane.canvas;
+            if (!canvas) continue;
+            if (canvas.width !== cw) canvas.width = cw;
+            if (canvas.height !== ch) canvas.height = ch;
             /* размер на экране задаёт CSS (100%/100%), тут только буфер */
-            this.canvas.style.width = '';
-            this.canvas.style.height = '';
+            canvas.style.width = '';
+            canvas.style.height = '';
+            pane.ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
-        if (this.ctx) this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.ctx = this.panes[this.active]?.ctx || null;
         this._paintDebug();
 
         if (!changed) return;
 
-        for (const it of this.instances) {
-            try {
-                it.inst.resize?.(w, h, dpr);
-            } catch {
-                /* эффект не обязан переживать ресайз молча */
+        for (const pane of this.panes) {
+            for (const it of pane.inst) {
+                try {
+                    it.inst.resize?.(w, h, dpr);
+                } catch {
+                    /* эффект не обязан переживать ресайз молча */
+                }
             }
         }
     }
@@ -391,48 +415,130 @@ export class Engine {
      * @param {object|null} scene
      */
     setScene(scene) {
+        const prev = this.scene;
         this.scene = scene || null;
         this.mount();
 
         if (!scene) {
             this.stop();
             this.setOff(true);
+            this._skyKey = '';
             return;
         }
 
+        const same = Boolean(prev && prev.id === scene.id);
         this.setOff(false);
         this.applySky(scene);
         this.applyLook();
-        this.rebuild();
+        if (same) this.rebuild();
+        else this.switchTo(scene);
         this.resume();
+    }
+
+    /**
+     * Смена сцены с растворением: новый набор эффектов собирается во втором
+     * слое, CSS гасит старый и проявляет новый. Если сцена первая — сразу.
+     */
+    switchTo(scene) {
+        if (!this.panes.length) {
+            this.rebuild();
+            return;
+        }
+        if (!this.scene || this.reduced || this.panes.length < 2) {
+            this.rebuild();
+            return;
+        }
+
+        const from = this.panes[this.active];
+        const to = this.panes[1 - this.active];
+        this._destroyPane(to);
+        this._buildInto(to);
+        this.active = 1 - this.active;
+        this.ctx = this.panes[this.active]?.ctx || null;
+
+        /* Классы меняем в следующем кадре, иначе браузер не увидит старт
+           перехода и слой просто мигнёт. */
+        requestAnimationFrame(() => {
+            to.wrap.classList.add('on');
+            from.wrap.classList.remove('on');
+        });
+
+        /* Старую сцену добиваем, когда она уже погасла. */
+        clearTimeout(this._swapTimer);
+        this._swapTimer = setTimeout(() => {
+            if (from !== this.panes[this.active]) this._destroyPane(from);
+        }, 650);
     }
 
     applySky(scene) {
         const sky = this.nodes?.sky;
         if (!sky) return;
-        const layers = scene.sky ? (Array.isArray(scene.sky) ? scene.sky : [scene.sky]) : [];
-        sky.innerHTML = '';
+        const layers = scene?.sky ? (Array.isArray(scene.sky) ? scene.sky : [scene.sky]) : [];
+        const skyOn = clamp(this.look.sky ?? 0.45, 0, 1);
+        const setOpacity = (el, layer) => {
+            const own = layer && typeof layer === 'object' && layer.opacity != null ? layer.opacity : 1;
+            el.style.opacity = String(own * skyOn);
+        };
+
+        /* Ключ неба: ползунок «фон сцены» не должен каждый тик пересобирать слои. */
+        const key = JSON.stringify(
+            layers.map((l) =>
+                typeof l === 'string'
+                    ? { id: l }
+                    : { id: l.id || '', css: l.css || '', mask: l.mask || '', opacity: l.opacity ?? 1 },
+            ),
+        );
+        if (key === this._skyKey) {
+            const nodes = this._skyLayers;
+            layers.forEach((layer, i) => {
+                if (nodes[i]) setOpacity(nodes[i], layer);
+            });
+            return;
+        }
+        this._skyKey = key;
+
+        const old = [...sky.children];
+        const fresh = [];
         for (const layer of layers) {
             const css = typeof layer === 'string' ? skyCss(layer) : layer.css || skyCss(layer.id);
             if (!css) continue;
             const div = document.createElement('div');
             div.className = 'atmos-sky-layer';
             div.style.background = css;
-            const own = layer && typeof layer === 'object' && layer.opacity != null ? layer.opacity : 1;
-            div.style.opacity = String(own * clamp(this.look.sky ?? 0.45, 0, 1));
+            div.style.opacity = '0';
             /* необязательная маска: нужна, чтобы лучи света гасли книзу */
             if (layer && typeof layer === 'object' && layer.mask) {
                 div.style.maskImage = layer.mask;
                 div.style.webkitMaskImage = layer.mask;
             }
             sky.appendChild(div);
+            fresh.push({ div, layer });
+        }
+
+        const reveal = () => fresh.forEach(({ div, layer }) => setOpacity(div, layer));
+        this._skyLayers = fresh.map((f) => f.div);
+        if (this.reduced) reveal();
+        else requestAnimationFrame(reveal);
+
+        for (const el of old) {
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 900);
         }
     }
 
+    /** Пересобрать эффекты в текущем (видимом) слое — без растворения. */
     rebuild() {
-        this.destroyInstances();
-        if (!this.scene) return;
+        if (!this.scene || !this.panes.length) {
+            this.destroyInstances();
+            return;
+        }
+        const pane = this.panes[this.active];
+        this._destroyPane(pane);
+        this._buildInto(pane);
+    }
 
+    _buildInto(pane) {
+        if (!pane || !this.scene) return;
         const reduced = this.reduced;
         for (const layer of this.scene.layers || []) {
             const def = getEffect(layer.effect);
@@ -455,30 +561,36 @@ export class Engine {
             };
             try {
                 const inst = def.create(env) || {};
-                this.instances.push({ def, inst });
+                pane.inst.push({ def, inst });
             } catch (e) {
                 console.warn('[Magic Aura] эффект не создался:', def.id, e);
             }
         }
     }
 
-    destroyInstances() {
-        for (const it of this.instances) {
+    _destroyPane(pane) {
+        if (!pane) return;
+        for (const it of pane.inst) {
             try {
                 it.inst.destroy?.();
             } catch {
                 /* пусто */
             }
         }
-        this.instances = [];
-        if (this.ctx) this.ctx.clearRect(0, 0, this.w, this.h);
+        pane.inst = [];
+        if (pane.ctx) pane.ctx.clearRect(0, 0, this.w, this.h);
+    }
+
+    destroyInstances() {
+        for (const pane of this.panes) this._destroyPane(pane);
     }
 
     /* ---------- цикл ---------- */
 
     resume() {
         if (!this.root || !this.scene) return;
-        if (this.instances.length === 0) return;
+        const live = this.panes.reduce((n, p) => n + p.inst.length, 0);
+        if (live === 0) return;
         if (!this.paused) return;
         this.paused = false;
         this.last = 0;
@@ -494,6 +606,8 @@ export class Engine {
 
     stop() {
         this.pause();
+        clearTimeout(this._swapTimer);
+        this._swapTimer = 0;
         this.destroyInstances();
     }
 
@@ -513,25 +627,30 @@ export class Engine {
         dt = Math.min(dt, 0.05);
 
         const t = (ts - this.t0) / 1000;
-        const ctx = this.ctx;
         const step = dt * clamp(this.look.speed, 0.05, 4);
 
-        ctx.clearRect(0, 0, this.w, this.h);
+        for (const pane of this.panes) {
+            const ctx = pane.ctx;
+            if (!ctx) continue;
+            ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+            ctx.clearRect(0, 0, this.w, this.h);
+            if (!pane.inst.length) continue;
 
-        for (const it of this.instances) {
-            ctx.globalCompositeOperation = it.def.blend || 'source-over';
-            ctx.globalAlpha = 1;
-            try {
-                it.inst.draw(ctx, t, step);
-            } catch (e) {
-                if (!it._warned) {
-                    it._warned = true;
-                    console.warn('[Magic Aura] эффект упал в кадре:', it.def.id, e);
+            for (const it of pane.inst) {
+                ctx.globalCompositeOperation = it.def.blend || 'source-over';
+                ctx.globalAlpha = 1;
+                try {
+                    it.inst.draw(ctx, t, step);
+                } catch (e) {
+                    if (!it._warned) {
+                        it._warned = true;
+                        console.warn('[Magic Aura] эффект упал в кадре:', it.def.id, e);
+                    }
                 }
             }
+            ctx.globalCompositeOperation = 'source-over';
         }
 
-        ctx.globalCompositeOperation = 'source-over';
         this.raf = requestAnimationFrame(this._frame);
     }
 }

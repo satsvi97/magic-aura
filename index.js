@@ -98,13 +98,14 @@ function rememberChat() {
 
 const engine = new Engine();
 
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 
 const ui = createUI({
     version: VERSION,
     scenes: SCENES,
     getSettings: () => settings,
     setScene: (id) => applyScene(id, { user: true }),
+    panelNote: () => panelNoteText(),
     patch: (key, value) => {
         settings[key] = value;
         persist();
@@ -217,6 +218,15 @@ function syncFromPanel(force = false, fresh = false) {
     const derived = deriveAtmosphere(state, { useExplicit });
     if (!derived) return;
 
+    if (settings.debug) {
+        console.debug('[Magic Aura] панель →', derived.sceneId, {
+            weather: state.weather,
+            place: state.place,
+            time: state.timeOfDay,
+            mood: state.mood,
+        });
+    }
+
     engine.setMood({ shadeK: derived.shadeK });
     if (derived.sceneId && derived.sceneId !== settings.scene) {
         applyScene(derived.sceneId, { save: false });
@@ -281,11 +291,25 @@ const api = {
         announceState();
         return settings.syncPanel;
     },
+    /* Что именно Aura прочитала из панели и во что это превратилось. */
+    panelNote: panelNoteText,
     /* Открыть быстрый выбор сцены у кнопки в углу. */
     open() {
         ui.togglePop(true);
     },
 };
+
+/* Строка-подсказка в настройках: что прочитано из Scene Panel и что из этого вышло. */
+function panelNoteText() {
+    const state = readPanelState(ctx);
+    if (!state) return 'Scene Panel: нет данных';
+    if (!settings.syncPanel) return 'Scene Panel: синхронизация выключена';
+    const bits = [state.weather, state.place, state.timeOfDay].map((v) => String(v ?? '').trim()).filter(Boolean);
+    if (!bits.length) return 'Scene Panel: пусто — заполни погоду, место или время';
+    const id = deriveAtmosphere(state)?.sceneId;
+    const name = id ? SCENE_BY_ID.get(id)?.name || id : '';
+    return 'Scene Panel: ' + bits.join(' · ') + (name ? ' → ' + name : '');
+}
 
 /* Scene Panel шлёт это событие после каждого изменения сцены.
    detail.fresh — сцену аура=… назвали именно сейчас. */

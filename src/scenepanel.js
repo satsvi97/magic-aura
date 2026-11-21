@@ -32,24 +32,35 @@ function matchRow(table, text) {
     return null;
 }
 
-/* Погода решает частицы. Порядок важен: гроза раньше дождя, метель раньше снега. */
-const WEATHER_MAP = [
+/* Погода делится на две группы. Сильная (гроза, осадки) задаёт картинку целиком —
+   у неё своё небо и частицы. Нейтральная (облачно/ясно) только правит небо и не
+   перебивает место и время суток: иначе «ночь в башне» превращается в серый день.
+   Порядок важен: гроза раньше дождя, метель раньше снега. */
+const STRONG_WEATHER = [
     ['storm', ['гроз', 'thunder', 'åsk', 'storm']],
     ['hail', ['град', 'hail']],
     ['blizzard', ['метел', 'метёл', 'вьюг', 'пург', 'blizzard', 'snowstorm']],
     ['snow', ['снег', 'snow', 'snö']],
     ['rainy', ['дожд', 'ливн', 'rain', 'shower', 'regn']],
+];
+
+const MILD_WEATHER = [
     ['cloudy', ['облачн', 'пасмурн', 'хмур', 'cloudy', 'overcast', 'mulen', 'moln']],
     ['sunny', ['солнечн', 'ясн', 'sunny', 'clear', 'solig']],
 ];
 
-/* Место решает облик, если погода нейтральная. */
+/* Место решает облик: конкретная локация важнее нейтральной погоды. */
 const PLACE_MAP = [
     ['desert', ['пустын', 'песок', 'песч', 'бархан', 'дюн', 'desert', 'sand', 'dune', 'öken']],
     ['deep', ['море', 'морск', 'океан', 'подводн', 'глубин', 'sea ', 'ocean', 'underwater', 'havet']],
     ['forest', ['лес', 'чащ', 'полян', 'рощ', 'forest', 'wood', 'skog']],
     ['neon', ['город', 'улиц', 'переул', 'неон', 'city', 'street', 'alley', 'stad']],
-    ['candle', ['храм', 'дворец', 'зал', 'комнат', 'свеч', 'библиотек', 'кабинет', 'temple', 'palace', 'hall', 'room', 'candle', 'rum']],
+    ['candle', [
+        'храм', 'дворец', 'зал', 'комнат', 'свеч', 'библиотек', 'кабинет',
+        'башн', 'замок', 'замк', 'крепост', 'трон', 'коридор', 'подземел', 'кель',
+        'трактир', 'таверн', 'шатёр', 'шатер', 'палатк', 'особняк', 'усадьб',
+        'temple', 'palace', 'hall', 'room', 'candle', 'rum', 'tower', 'castle', 'keep',
+    ]],
     ['garden', ['сад', 'garden', 'trädgård']],
     ['sakura', ['сакур', 'вишн', 'sakura', 'cherry']],
     ['autumn', ['осен', 'парк', 'autumn', 'park']],
@@ -101,7 +112,11 @@ function timeScene(t) {
     if (NIGHT.some((w) => t.includes(w))) return 'night';
     if (DAWN.some((w) => t.includes(w))) return 'fog';
     if (SUNSET.some((w) => t.includes(w))) return 'sunny';
-    return 'cloudy';
+    return null;
+}
+
+function isNight(t) {
+    return NIGHT.some((w) => t.includes(w));
 }
 
 /** Тон сцены правит затемнением. */
@@ -138,15 +153,25 @@ export function deriveAtmosphere(state, opts = {}) {
         if (explicit) return { sceneId: explicit, shadeK };
     }
 
-    let sceneId = matchRow(WEATHER_MAP, weather);
+    /* 1. Сильная погода: у неё своя картинка, спорить нечем. */
+    let sceneId = matchRow(STRONG_WEATHER, weather);
+
+    /* 2. Место: конкретная локация важнее нейтральной погоды. */
     if (!sceneId) {
         sceneId = matchRow(PLACE_MAP, place);
-        if (sceneId === 'desert' && NIGHT.some((w) => time.includes(w))) sceneId = 'desert_night';
+        if (sceneId === 'desert' && isNight(time)) sceneId = 'desert_night';
     }
-    /* Всё, что не попало в карты, ищем по словам самих сцен: так новые сцены
-       начинают работать без единой правки в этом файле. */
-    if (!sceneId) sceneId = keywordScene(state);
+
+    /* 3. Время суток: ночь не должна становиться «облачным днём». */
     if (!sceneId) sceneId = timeScene(time);
+
+    /* 4. Любые слова из места, тона и доп. полей — по keywords сцен. */
+    if (!sceneId) sceneId = keywordScene(state);
+
+    /* 5. Нейтральная погода — только если больше ничего не сказали. */
+    if (!sceneId) sceneId = matchRow(MILD_WEATHER, weather);
+
+    if (!sceneId) sceneId = 'cloudy';
 
     return { sceneId, shadeK };
 }

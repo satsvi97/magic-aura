@@ -123,7 +123,12 @@ export const SCENES = [
             { effect: 'embers', params: { color: '255,170,90', size: 0.55 }, intensity: 0.55 },
             { effect: 'motes', params: { color: '255,206,150', size: 0.6 }, intensity: 0.6 },
         ],
-        keywords: ['свеч', 'кабинет', 'библиотек', 'candle', 'library', 'study', 'warm light'],
+        keywords: [
+            'свеч', 'кабинет', 'библиотек', 'дворец', 'дворц', 'храм', 'комнат',
+            'башня', 'башне', 'башни', 'башню', 'башен', 'замок', 'замка', 'замке',
+            'крепост', 'трон', 'подземел', 'трактир', 'таверн',
+            'candle', 'library', 'study', 'warm light', 'tower', 'castle', 'keep', 'tavern',
+        ],
     },
     {
         id: 'deep',
@@ -172,7 +177,7 @@ export const SCENES = [
             { effect: 'mist', params: { color: '150,200,180' }, intensity: 0.6 },
             { effect: 'motes', params: { color: '190,255,210', size: 0.6 }, intensity: 0.6 },
         ],
-        keywords: ['лес', 'чаща', 'поляна', 'эльф', 'фей', 'forest', 'woods', 'fairy'],
+        keywords: ['лес', 'чаща', 'поляна', 'эльф', 'фей', 'светляч', 'дерев', 'forest', 'woods', 'fairy', 'firefl'],
     },
     {
         id: 'desert',
@@ -199,7 +204,10 @@ export const SCENES = [
             { effect: 'stars', params: { count: 170 } },
             { effect: 'sand', params: { color: '198,190,214', wind: 0.6 }, intensity: 0.55 },
         ],
-        keywords: ['ночная пустыня', 'пустыня ночью', 'ночь в пустын', 'ночной песок', 'desert night'],
+        keywords: [
+            'ночная пустыня', 'пустыня ночью', 'ночь в пустын', 'ночной песок', 'пустыня под звезд',
+            'пустыня под звёзд', 'звездная пустыня', 'звёздная пустыня', 'desert night',
+        ],
     },
     {
         id: 'autumn',
@@ -323,24 +331,32 @@ export const SCENES = [
 
 export const SCENE_BY_ID = new Map(SCENES.map((s) => [s.id, s]));
 
-/** «Ночной лес, дождь» -> первая сцена, чьё слово встретилось раньше всех.
- *  При равенстве позиции выигрывает более длинное слово: «звёздопад» важнее «звёзд». */
+const normText = (v) => String(v ?? '').toLowerCase().replace(/ё/g, 'е');
+
+/** «Ночной лес, дождь» -> сцена, у которой больше всего совпавших слов.
+ *  Считаем сумму длин совпадений: «звёздопад» весит больше, чем «звёзд»,
+ *  а служебные короткие слова не перетягивают картинку. */
 export function matchScene(text) {
     if (!text) return null;
-    const low = String(text).toLowerCase().replace(/ё/g, 'е');
+    const low = normText(text);
+    if (!low) return null;
     let best = null;
-    let bestAt = Infinity;
-    let bestLen = 0;
+    let bestScore = 0;
     for (const scene of SCENES) {
+        let score = 0;
         for (const raw of scene.keywords || []) {
-            const kw = raw.toLowerCase().replace(/ё/g, 'е');
-            const at = low.indexOf(kw);
-            if (at < 0) continue;
-            if (at < bestAt || (at === bestAt && kw.length > bestLen)) {
-                bestAt = at;
-                bestLen = kw.length;
-                best = scene;
+            const kw = normText(raw);
+            if (!kw) continue;
+            let at = low.indexOf(kw);
+            while (at >= 0) {
+                /* слово в начале текста — обычно и есть место действия */
+                score += kw.length * (at < 40 ? 1.2 : 1);
+                at = low.indexOf(kw, at + kw.length);
             }
+        }
+        if (score > bestScore) {
+            bestScore = score;
+            best = scene;
         }
     }
     return best;

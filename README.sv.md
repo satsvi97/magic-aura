@@ -59,8 +59,10 @@ Kräver SillyTavern **1.12+**. Inget API, inga externa anrop, inget skrivs i din
 ## Integration med Scene Panel
 
 Om [Scene Panel](https://github.com/satsvi97/scene-panel) är installerad läser Magic Aura dess
-scenläge och väljer atmosfären själv: väder → partiklar, plats → utseende, tid på dygnet → himmel,
-ton → nedtoning. Inget skrivs till Scene Panel, det läses bara. Ett manuellt scenval stänger av
+scenläge och väljer atmosfären själv: kraftigt väder → bilden, plats → utseende, tid på dygnet → himmel,
+ton → nedtoning. Mulet och klart väljer bara himmel när plats och tid inte säger något; natt, gryning
+och solnedgång vinner alltid. Scenen byts mjukt: partiklar ≈0,55 s, himmel ≈0,8 s.
+Inget skrivs till Scene Panel, det läses bara. Ett manuellt scenval stänger av
 synkroniseringen så att din bild alltid vinner.
 
 Sedan 0.4.0 fungerar länken åt båda hållen: Scene Panel skickar `scene-panel:update` vid varje
