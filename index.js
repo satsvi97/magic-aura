@@ -50,8 +50,8 @@ async function loadContext() {
     const candidates = [
         '../../../extensions.js', // public/scripts/extensions/third-party/<name>/
         '../../extensions.js', // data/<user>/extensions/<name>/
-        '../../../script.js',
-        '../../script.js',
+        '../../../../script.js', // <root>/script.js из third-party
+        '/script.js',
     ];
 
     for (const rel of candidates) {
@@ -60,12 +60,61 @@ async function loadContext() {
             const fn = mod.getContext || mod.default;
             if (typeof fn !== 'function') continue;
             const c = fn();
-            if (c?.eventSource) return c;
+            if (c?.eventSource) {
+                rememberHostModule(mod);
+                return c;
+            }
         } catch {
             /* следующий кандидат */
         }
     }
     return null;
+}
+
+/*
+ * `chat_metadata` в script.js — это `export let`, который ST пересоздаёт
+ * (chat_metadata = {}) при каждой смене чата. Значение, снятое через
+ * getContext(), после этого мёртвое. Живой биндинг модуля всегда указывает
+ * на актуальный объект, поэтому для чтения/записи держим ссылку на модуль.
+ */
+let hostModule = null;
+
+const META_CANDIDATES = [
+    '../../../../script.js', // <root>/script.js из third-party
+    '/script.js', // на случай нестандартного монтирования
+];
+
+async function loadHostModule() {
+    const here = import.meta.url;
+    for (const rel of META_CANDIDATES) {
+        try {
+            const mod = await import(new URL(rel, here).href);
+            if ('chat_metadata' in mod) return mod;
+        } catch {
+            /* следующий кандидат */
+        }
+    }
+    return null;
+}
+
+/* Модуль ST, откуда берём живой chat_metadata (script.js) и сохранение. */
+function rememberHostModule(mod) {
+    if (mod && 'chat_metadata' in mod) hostModule = mod;
+}
+
+/** Актуальные метаданные чата: живой биндинг, иначе снимок из контекста. */
+function chatMeta() {
+    const live = hostModule?.chat_metadata;
+    return live && typeof live === 'object' ? live : ctx?.chatMetadata || null;
+}
+
+function saveMetadata() {
+    try {
+        const save = hostModule?.saveMetadataDebounced || ctx?.saveMetadataDebounced;
+        if (typeof save === 'function') save();
+    } catch {
+        /* метаданные сохранит ST при следующем действии */
+    }
 }
 
 function toast(message) {
@@ -89,16 +138,17 @@ function persist() {
 
 function rememberChat() {
     if (!ctx || !settings.perChat) return;
-    if (!ctx.chatMetadata) return;
-    ctx.chatMetadata[STORE] = { scene: settings.scene };
-    ctx.saveMetadataDebounced?.();
+    const meta = chatMeta();
+    if (!meta) return;
+    meta[STORE] = { scene: settings.scene };
+    saveMetadata();
 }
 
 /* ---------- движок и интерфейс ---------- */
 
 const engine = new Engine();
 
-const VERSION = '0.5.0';
+const VERSION = '0.5.1';
 
 const ui = createUI({
     version: VERSION,
@@ -148,9 +198,12 @@ function afterChange(key) {
     if (key === 'debug') {
         engine.setDebug(settings.debug);
     }
-    if (key === 'perChat' && !settings.perChat && ctx?.chatMetadata) {
-        delete ctx.chatMetadata[STORE];
-        ctx.saveMetadataDebounced?.();
+    if (key === 'perChat' && !settings.perChat) {
+        const meta = chatMeta();
+        if (meta) {
+            delete meta[STORE];
+            saveMetadata();
+        }
     }
     if (key === 'syncPanel' && settings.syncPanel) {
         syncFromPanel(true);
@@ -167,12 +220,18 @@ function applyScene(id, opts = {}) {
     const scene = id && SCENE_BY_ID.has(id) ? SCENE_BY_ID.get(id) : null;
     settings.scene = scene ? scene.id : null;
 
-    /* ручной выбор сцены главнее Scene Panel — иначе таверна будет
-       перекрашиваться под текст прямо в момент, когда выбрана картинка */
-    if (opts.user && settings.syncPanel) {
+    /* ручной выбор сцены главнее всего: и Scene Panel, и реакции на текст.
+       Иначе выбранная картинка живёт до следующего сообщения — а потом
+       таверна снова перекрашивается «сама по себе». */
+    if (opts.user) {
+        const wasSync = settings.syncPanel;
+        const wasAuto = settings.autoMood;
         settings.syncPanel = false;
-        persist();
-        toast('Синхронизация со Scene Panel выключена');
+        settings.autoMood = false;
+        if (wasSync || wasAuto) {
+            persist();
+            toast('Сцена закреплена: синхронизация и реакция на текст выключены');
+        }
     }
 
     engine.mount();
@@ -201,7 +260,7 @@ let lastAuraHint = null;
 
 function syncFromPanel(force = false, fresh = false) {
     if (!ctx || !settings.enabled || !settings.syncPanel) return;
-    const state = readPanelState(ctx);
+    const state = readPanelState(chatMeta());
     if (!state) return;
 
     const key = panelKey(state);
@@ -216,7 +275,16 @@ function syncFromPanel(force = false, fresh = false) {
     lastAuraHint = hint;
 
     const derived = deriveAtmosphere(state, { useExplicit });
-    if (!derived) return;
+    if (!derived) {
+        if (settings.debug) {
+            console.debug('[Magic Aura] панель: ничего не распознано, сцену не трогаем', {
+                weather: state.weather,
+                place: state.place,
+                time: state.timeOfDay,
+            });
+        }
+        return;
+    }
 
     if (settings.debug) {
         console.debug('[Magic Aura] панель →', derived.sceneId, {
@@ -247,7 +315,7 @@ function apiState() {
         sceneName: settings.scene ? SCENE_BY_ID.get(settings.scene)?.name || null : null,
         layer: settings.layer,
         syncPanel: !!settings.syncPanel,
-        panel: Boolean(readPanelState(ctx)),
+        panel: Boolean(readPanelState(chatMeta())),
     };
 }
 
@@ -301,14 +369,14 @@ const api = {
 
 /* Строка-подсказка в настройках: что прочитано из Scene Panel и что из этого вышло. */
 function panelNoteText() {
-    const state = readPanelState(ctx);
+    const state = readPanelState(chatMeta());
     if (!state) return 'Scene Panel: нет данных';
     if (!settings.syncPanel) return 'Scene Panel: синхронизация выключена';
     const bits = [state.weather, state.place, state.timeOfDay].map((v) => String(v ?? '').trim()).filter(Boolean);
     if (!bits.length) return 'Scene Panel: пусто — заполни погоду, место или время';
-    const id = deriveAtmosphere(state)?.sceneId;
-    const name = id ? SCENE_BY_ID.get(id)?.name || id : '';
-    return 'Scene Panel: ' + bits.join(' · ') + (name ? ' → ' + name : '');
+    const derived = deriveAtmosphere(state);
+    const name = derived ? SCENE_BY_ID.get(derived.sceneId)?.name || derived.sceneId : '';
+    return 'Scene Panel: ' + bits.join(' · ') + (name ? ' → ' + name : ' → не распознано');
 }
 
 /* Scene Panel шлёт это событие после каждого изменения сцены.
@@ -319,13 +387,32 @@ function onPanelUpdate(e) {
 
 /* ---------- события ST ---------- */
 
+/* Смена чата: ST заменяет и chat_metadata, и массив chat — перечитываем контекст,
+   иначе реакции на текст смотрят в старый чат. */
+async function refreshContext() {
+    try {
+        const c = await loadContext();
+        if (c) ctx = c;
+    } catch {
+        /* остаёмся на старом контексте — метаданные всё равно живые */
+    }
+}
+
+function chatLines() {
+    const live = hostModule?.chat;
+    if (Array.isArray(live)) return live;
+    return ctx?.chat || [];
+}
+
 function onChatChanged() {
+    refreshContext();
     /* Scene Panel пишет состояние уже после смены чата — даём ему дочитать */
     setTimeout(() => syncFromPanel(true), 400);
     if (!settings.perChat) return;
-    const saved = ctx?.chatMetadata?.[STORE]?.scene ?? settings.scene;
+    const meta = chatMeta();
+    const saved = meta?.[STORE]?.scene ?? settings.scene;
     if (saved !== settings.scene) applyScene(saved ?? null, { save: false });
-    else if (ctx?.chatMetadata && !ctx.chatMetadata[STORE]) rememberChat();
+    else if (meta && !meta[STORE]) rememberChat();
 }
 
 let lastMoodAt = 0;
@@ -342,7 +429,7 @@ function onMessageReceived(messageId) {
     const now = Date.now();
     if (now - lastMoodAt < MOOD_COOLDOWN) return;
 
-    const chat = ctx?.chat || [];
+    const chat = chatLines();
     const mes = chat?.[messageId]?.mes || chat?.[chat.length - 1]?.mes || '';
     if (!mes) return;
 
@@ -459,6 +546,7 @@ async function boot() {
 
     /* контекст грузим уже после DOM: модули ST к этому моменту точно на месте */
     ctx = await loadContext();
+    hostModule = (await loadHostModule()) || hostModule;
     if (!ctx) {
         console.warn('[Magic Aura] не удалось получить контекст SillyTavern — расширение не запустится.');
         return;

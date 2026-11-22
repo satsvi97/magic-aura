@@ -1,6 +1,20 @@
 # Changelog
 
-## 0.5.0 — smooth scene changes, smarter Scene Panel picks
+## 0.5.1 — Scene Panel actually reads the open chat
+
+- **Fixed: with Scene Panel sync on, the scene was stuck on «Облачно».** SillyTavern replaces
+  `chat_metadata` on every chat load/save, while the extension kept a reference taken at page load.
+  It was reading the metadata of a long-gone chat (empty), and the empty state fell back to
+  `cloudy`. The engine now reads the live `chat_metadata` binding and refreshes the ST context on
+  every chat change.
+- **Empty panel state no longer paints the tavern grey:** if nothing in the panel is recognised,
+  the current scene stays as it is (no forced cloudy).
+- **A manually picked scene is now locked for real:** it disables both Scene Panel sync and the
+  “react to text” mode, so the scene no longer drifts away on the next message.
+- Per-chat scene memory now saves into the live metadata object instead of a stale one.
+- Settings hint explains the case: “Scene Panel: … → не распознано”.
+
+## 0.5.0 - smooth scene changes, smarter Scene Panel picks
 
 - **Scenes now dissolve into each other.** Particles live in two stacked canvases: the new scene is
   built in the second one, CSS fades the old out and the new in (~0.55 s), and the sky gradients

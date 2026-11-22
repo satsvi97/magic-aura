@@ -10,10 +10,19 @@ import { matchScene, findScene } from './scenes.js';
 
 const STATE_KEY = 'scene_panel';
 
-/** Состояние сцены из метаданных чата (или null, если Scene Panel не активен). */
-export function readPanelState(ctx) {
+/**
+ * Состояние сцены из метаданных чата.
+ *
+ * ST пересоздаёт `chat_metadata` при каждой смене чата, поэтому сюда нужно
+ * передавать СВЕЖИЙ объект (живой биндинг модуля), а не ctx.chatMetadata,
+ * снятый один раз при загрузке страницы — иначе читаем метаданные старого
+ * чата и видим пустое состояние.
+ *
+ * @param {object|null} metadata объект chat_metadata
+ */
+export function readPanelState(metadata) {
     try {
-        const s = ctx?.chatMetadata?.[STATE_KEY];
+        const s = metadata?.[STATE_KEY];
         return s && typeof s === 'object' ? s : null;
     } catch {
         return null;
@@ -171,7 +180,10 @@ export function deriveAtmosphere(state, opts = {}) {
     /* 5. Нейтральная погода — только если больше ничего не сказали. */
     if (!sceneId) sceneId = matchRow(MILD_WEATHER, weather);
 
-    if (!sceneId) sceneId = 'cloudy';
+    /* 6. Ничего не поняли — не трогаем сцену, которую выбрали руками.
+       Раньше здесь стоял принудительный 'cloudy', и панель с пустыми полями
+       навсегда закрашивала таверну серым «облачно». */
+    if (!sceneId) return null;
 
     return { sceneId, shadeK };
 }
