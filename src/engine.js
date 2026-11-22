@@ -12,8 +12,20 @@
  */
 
 const DPR_CAP = 1.5;
+/* Потолок пиксельного буфера: 4K-монитор не должен получать канву на 8 Мпикс. */
+const MAX_PIXELS = 3200000;
 
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+/** rgba(...) с умноженной прозрачностью: нужно для тонировки сцены. */
+export function withAlpha(color, k) {
+    if (!color || color === 'transparent') return 'transparent';
+    const m = /^rgba?\(([^)]+)\)$/i.exec(String(color).trim());
+    if (!m) return color;
+    const parts = m[1].split(',').map((s) => s.trim());
+    const a = parts.length > 3 ? Number(parts[3]) : 1;
+    return `rgba(${parts[0]},${parts[1]},${parts[2]},${clamp(a * k, 0, 1)})`;
+}
 export const rnd = (a, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
 export const pick = (arr) => arr[(Math.random() * arr.length) | 0];
 
@@ -119,6 +131,7 @@ export class Engine {
         this.last = 0;
         this.t0 = 0;
         this.paused = true;
+        this._lastDraw = 0;
 
         this.look = { density: 1, opacity: 0.9, speed: 1, size: 1, shade: 0.28, sky: 0.45 };
         this.lite = false;
@@ -163,10 +176,7 @@ export class Engine {
         root.innerHTML = `
             <div class="atmos-sky"></div>
             <div class="atmos-day"></div>
-            <div class="atmos-grade"></div>
-            <div class="atmos-shade"></div>
-            <div class="atmos-vignette"></div>
-            <div class="atmos-grain"></div>
+            <div class="atmos-paper"></div>
             <div class="atmos-flash"></div>
         `;
 
@@ -202,10 +212,7 @@ export class Engine {
         this.nodes = {
             sky: root.querySelector('.atmos-sky'),
             day: root.querySelector('.atmos-day'),
-            grade: root.querySelector('.atmos-grade'),
-            shade: root.querySelector('.atmos-shade'),
-            vignette: root.querySelector('.atmos-vignette'),
-            grain: root.querySelector('.atmos-grain'),
+            paper: root.querySelector('.atmos-paper'),
             flash: root.querySelector('.atmos-flash'),
             debug: fx.querySelector('.atmos-debug'),
         };
@@ -301,7 +308,11 @@ export class Engine {
         const de = document.documentElement;
         let w = Math.round(Math.max(vv?.width || 0, window.innerWidth || 0, de.clientWidth || 0, 360));
         let h = Math.round(Math.max(vv?.height || 0, window.innerHeight || 0, de.clientHeight || 0, 640));
-        const dpr = this.lite ? 1 : Math.min(window.devicePixelRatio || 1, DPR_CAP);
+        const want = Math.min(window.devicePixelRatio || 1, this.coarse ? 1.25 : DPR_CAP);
+        /* Ограничиваем не только DPR, но и общий объём канвы: 4K при 1.5× —
+           это 18 Мпикс, на слабом GPU это уже слайд-шоу. */
+        const fit = Math.sqrt(MAX_PIXELS / Math.max(1, w * h));
+        const dpr = this.lite ? 1 : Math.max(0.75, Math.min(want, fit));
 
         for (const el of [this.root, this.fx, document.getElementById('atmos-ui')]) {
             if (!el) continue;
@@ -543,10 +554,12 @@ export class Engine {
         if (this.fx) this.fx.style.opacity = op;
 
         const shade = clamp(this.look.shade * (g.shade ?? 1) * (this.moodShadeK || 1), 0, 1);
-        if (this.nodes.shade) this.nodes.shade.style.opacity = String(shade);
-        if (this.nodes.grade) {
-            this.nodes.grade.style.background = g.tint || 'transparent';
-            this.nodes.grade.style.opacity = g.tint ? String(g.tintOpacity ?? 1) : '0';
+        /* Тонировка, затемнение, виньетка и зерно — один слой: меньше
+           полноэкранных проходов композитинга на каждом кадре. */
+        const paper = this.nodes?.paper;
+        if (paper) {
+            paper.style.setProperty('--atmos-shade', `rgba(0,0,0,${shade.toFixed(3)})`);
+            paper.style.setProperty('--atmos-tint', withAlpha(g.tint, g.tintOpacity ?? 1));
         }
     }
 
@@ -693,7 +706,10 @@ export class Engine {
                 dpr: this.dpr,
                 density: this.look.density,
                 intensity: layer.intensity ?? 1,
-                lite: this.lite,
+                /* на тач-экранах бюджеты те же, что в Lite: разница в плотности
+                   там не видна, а каждая лишняя частица — это кадр, который
+                   греет телефон */
+                lite: this.lite || this.coarse,
                 reduced,
                 params: layer.params || {},
                 rnd,
@@ -750,6 +766,7 @@ export class Engine {
         if (!this.paused) return;
         this.paused = false;
         this.last = 0;
+        this._lastDraw = 0;
         this.t0 = performance.now();
         this.raf = requestAnimationFrame(this._frame);
     }
@@ -770,6 +787,23 @@ export class Engine {
     _frame(ts) {
         if (this.paused) return;
         if (!this.ctx) return;
+
+        /* Свой лимит кадров: на 144 Гц мониторе и в неактивном окне незачем
+           рисовать 200 раз в секунду. Lite — 30, обычный — 60, окно без фокуса
+           и reduce-motion — 30. Экономия и батареи, и GPU. */
+        let cap = this.lite ? 30 : 60;
+        /* Тач-экраны: 40 кадров хватает, а композитинг поверх ST-шных blur-панелей
+           на телефонах дорогой — половина экономии без видимой разницы. */
+        if (this.coarse) cap = Math.min(cap, 40);
+        if (this.reduced || (typeof document.hasFocus === 'function' && !document.hasFocus())) {
+            /* окно не в фокусе (свернули, ушли в другую программу) — экономим кадры */
+            cap = Math.min(cap, 20);
+        }
+        if (ts - this._lastDraw < 1000 / cap - 1.5) {
+            this.raf = requestAnimationFrame(this._frame);
+            return;
+        }
+        this._lastDraw = ts;
 
         /* Раз в полсекунды сверяем размеры с вьюпортом: в окнах-приложениях
            и при смене масштаба resize-событие может не прийти, а слой обязан
@@ -823,4 +857,24 @@ export function budget(w, h, per, min, max, env) {
     const raw = (w * h) / per;
     const scaled = raw * (env.density ?? 1) * (env.intensity ?? 1) * (env.lite ? 0.5 : 1);
     return Math.round(clamp(scaled, min, max));
+}
+
+/**
+ * Мягкое пятно в canvas-спрайте: туман, дымка, блики.
+ *
+ * Раньше такие пятна рисовались createRadialGradient в каждом кадре —
+ * 5–7 градиентов на кадр на ровном месте. Один спрайт и drawImage дешевле
+ * в разы, а визуально это тот же мягкий круг.
+ */
+export function radialSprite(color, size = 64, mid = 0.42) {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    grd.addColorStop(0, `rgba(${color},1)`);
+    grd.addColorStop(0.55, `rgba(${color},${mid})`);
+    grd.addColorStop(1, `rgba(${color},0)`);
+    g.fillStyle = grd;
+    g.fillRect(0, 0, size, size);
+    return c;
 }

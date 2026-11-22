@@ -169,7 +169,14 @@ registerEffect({
 - One `<canvas>` and one `requestAnimationFrame` for the whole scene.
 - Particle count scales with screen area and is capped.
 - Sky, grade, vignette and film grain are pure CSS — they cost no frames.
-- Pauses on a hidden tab; `prefers-reduced-motion` keeps the sky but drops the motion; DPR is capped at 1.5 (1 in Lite).
+- Pauses on a hidden tab; `prefers-reduced-motion` keeps the sky but drops the motion.
+- **Frame limiter:** 60 fps, 40 on touch screens, 30 in Lite, 20 when the window is not focused.
+  The loop no longer follows a 165/240 Hz display.
+- **Canvas pixel budget ≈ 3.2 Mpx** (Lite / touch: lower DPR), so 4K does not get a huge buffer.
+- **Particles are batched:** stars, snow, rain and dust draw in 3–4 paths per frame; mist, shimmer and
+  ground fog use pre-built sprites instead of per-frame gradients.
+- Touch screens get Lite-level particle counts automatically; weak devices start in Lite.
+- DPR is capped at 1.5 (1.25 on touch, 1 in Lite).
 - Parallax and message reactions are separate switches, and both are off in Lite / on touch screens: the base picture costs the same as before.
 - The day-cycle tint is one CSS overlay that changes once per tick when the hour actually moves.
 - Ambient events (crows, occasional meteors) are budgeted and skipped in Lite.

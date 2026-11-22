@@ -14,17 +14,24 @@ registerEffect({
         const p = env.params || {};
         const color = p.color || '232,232,255';
         let stars = [];
+        /* Группы по яркости: один путь + один fill на группу вместо 200 вызовов.
+           Мерцание остаётся, но групповое — на глаз это тот же звёздный шум. */
+        const BUCKETS = 4;
 
         function seed() {
             const n = Math.round((p.count ?? 200) * (env.lite ? 0.55 : 1));
-            stars = Array.from({ length: n }, () => ({
-                x: Math.random(),
-                y: Math.pow(Math.random(), 1.35) * 0.92,
-                r: rnd(0.5, 2),
-                o: rnd(0.25, 0.95),
-                sp: rnd(0.4, 1.8),
-                ph: rnd(0, Math.PI * 2),
-            }));
+            stars = Array.from({ length: n }, () => {
+                const o = rnd(0.25, 0.95);
+                return {
+                    x: Math.random(),
+                    y: Math.pow(Math.random(), 1.35) * 0.92,
+                    r: rnd(0.5, 2),
+                    o,
+                    sp: rnd(0.4, 1.8),
+                    ph: rnd(0, Math.PI * 2),
+                    b: Math.min(BUCKETS - 1, Math.floor(o * BUCKETS)),
+                };
+            });
         }
         seed();
 
@@ -34,12 +41,19 @@ registerEffect({
                 h = nh;
             },
             draw(ctx, t) {
-                for (const s of stars) {
-                    const a = s.o * (0.6 + 0.4 * Math.sin(t * s.sp + s.ph)) * 1.25;
-                    ctx.fillStyle = `rgba(${color},${clamp(a, 0.04, 1)})`;
+                for (let b = 0; b < BUCKETS; b++) {
+                    const pulse = 0.6 + 0.4 * Math.sin(t * (0.5 + b * 0.28) + b * 1.7);
+                    const base = ((b + 0.5) / BUCKETS) * pulse * 1.25;
+                    ctx.fillStyle = `rgba(${color},${clamp(base, 0.04, 1)})`;
                     ctx.beginPath();
-                    ctx.arc(s.x * w, s.y * h, s.r, 0, Math.PI * 2);
-                    ctx.fill();
+                    let any = false;
+                    for (const s of stars) {
+                        if (s.b !== b) continue;
+                        any = true;
+                        ctx.moveTo(s.x * w + s.r, s.y * h);
+                        ctx.arc(s.x * w, s.y * h, s.r, 0, Math.PI * 2);
+                    }
+                    if (any) ctx.fill();
                 }
             },
         };
@@ -62,27 +76,35 @@ registerEffect({
         let shots = [];
         let next = rnd(0.6, 2.5);
 
+        function shoot() {
+            const sx = rnd(0.05, 0.95) * w;
+            const sy = rnd(0.02, 0.4) * h;
+            const ang = rnd(Math.PI * 0.16, Math.PI * 0.34);
+            const sp = rnd(520, 900);
+            shots.push({
+                x: sx,
+                y: sy,
+                vx: Math.cos(ang) * sp,
+                vy: Math.sin(ang) * sp,
+                life: rnd(0.6, 1.05),
+                age: 0,
+            });
+        }
+
         return {
             resize(nw, nh) {
                 w = nw;
                 h = nh;
             },
+            /** Отправка сообщения: одна падающая звезда в ответ. */
+            burst(kind) {
+                if (kind === 'send') shoot();
+            },
             draw(ctx, t, dt) {
                 next -= dt;
                 if (next <= 0) {
                     next = rnd(every[0], every[1]);
-                    const sx = rnd(0.05, 0.95) * w;
-                    const sy = rnd(0.02, 0.4) * h;
-                    const ang = rnd(Math.PI * 0.16, Math.PI * 0.34);
-                    const sp = rnd(520, 900);
-                    shots.push({
-                        x: sx,
-                        y: sy,
-                        vx: Math.cos(ang) * sp,
-                        vy: Math.sin(ang) * sp,
-                        life: rnd(0.6, 1.05),
-                        age: 0,
-                    });
+                    shoot();
                 }
 
                 for (const s of shots) {

@@ -51,7 +51,22 @@ function sunSprite() {
     return c;
 }
 
-const SPRITES = { moon: null, sun: null };
+function haloSprite() {
+    const S = 192;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    grd.addColorStop(0, 'rgba(226,230,255,.42)');
+    grd.addColorStop(0.22, 'rgba(214,218,255,.28)');
+    grd.addColorStop(0.55, 'rgba(196,200,255,.1)');
+    grd.addColorStop(1, 'rgba(190,190,255,0)');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, S, S);
+    return c;
+}
+
+const SPRITES = { moon: null, sun: null, halo: null };
 
 registerEffect({
     id: 'celestial',
@@ -65,9 +80,15 @@ registerEffect({
         let h = env.h;
         const p = env.params || {};
         const body = p.body === 'sun' ? 'sun' : 'moon';
+        /* soft — без диска: только мягкое световое пятно. Ночью и под сиянием
+           яркий шар читается как лампа, поэтому там его нет. */
+        const soft = !!p.soft;
         const fixedHour = Number.isFinite(p.hour) ? p.hour : body === 'sun' ? 12 : 22;
-        if (!SPRITES[body]) SPRITES[body] = body === 'sun' ? sunSprite() : moonSprite();
-        const sprite = SPRITES[body];
+        const key = soft ? 'halo' : body;
+        if (!SPRITES[key]) {
+            SPRITES[key] = soft ? haloSprite() : body === 'sun' ? sunSprite() : moonSprite();
+        }
+        const sprite = SPRITES[key];
         const scale = p.size ?? 1;
 
         return {
@@ -89,10 +110,13 @@ registerEffect({
                     : w * (0.84 - frac * 0.68);
                 const arc = Math.sin(Math.PI * frac);
                 const y = h * (Number.isFinite(p.y) ? p.y : 0.42 - arc * 0.3);
-                const size = Math.min(w, h) * (body === 'sun' ? 0.62 : 0.34) * scale;
+                const base = body === 'sun' ? 0.62 : soft ? 0.52 : 0.34;
+                const size = Math.min(w, h) * base * scale;
                 const shift = env.shift ? env.shift(0.25) : { x: 0, y: 0 };
 
-                ctx.globalAlpha = clamp(0.55 + arc * 0.45, 0, 1);
+                ctx.globalAlpha = soft
+                    ? clamp((0.35 + arc * 0.45) * (p.alpha ?? 1), 0, 1)
+                    : clamp(0.55 + arc * 0.45, 0, 1);
                 ctx.drawImage(sprite, x - size / 2 + shift.x, y - size / 2 + shift.y, size, size);
                 ctx.globalAlpha = 1;
             },

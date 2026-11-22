@@ -61,17 +61,18 @@ registerEffect({
             draw(ctx, t) {
                 const shift = env.shift ? env.shift(0.5) : { x: 0, y: 0 };
                 const bandH = h * 0.62;
-                for (const L of layers) {
+                const use = env.lite ? layers.slice(0, 2) : layers;
+                for (const L of use) {
                     const bw = w * L.k;
-                    const sway = Math.sin(t * 0.12 + L.ph) * w * 0.05;
+                    const sway = Math.sin(t * 0.07 + L.ph) * w * 0.07;
                     const x = (w - bw) / 2 + sway + shift.x * L.k;
-                    const y = h * L.y + Math.sin(t * 0.09 + L.ph * 1.7) * h * 0.015 + shift.y;
-                    const pulse = 0.82 + 0.18 * Math.sin(t * 0.23 + L.ph);
+                    const y = h * L.y + Math.sin(t * 0.055 + L.ph * 1.7) * h * 0.022 + shift.y;
+                    const pulse = 0.88 + 0.12 * Math.sin(t * 0.13 + L.ph);
 
                     ctx.save();
                     ctx.globalAlpha = clamp(L.a * pulse * (env.lite ? 0.6 : 1), 0, 1);
                     ctx.translate(x + bw / 2, y + bandH / 2);
-                    ctx.transform(1, 0, Math.sin(t * 0.08 + L.ph) * 0.1, 1, 0, 0);
+                    ctx.transform(1, 0, Math.sin(t * 0.05 + L.ph) * 0.08, 1, 0, 0);
                     ctx.drawImage(L.sprite, -bw / 2, -bandH / 2, bw, bandH);
                     ctx.restore();
                 }

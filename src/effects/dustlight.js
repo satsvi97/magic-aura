@@ -67,6 +67,7 @@ registerEffect({
             },
             burst(kind) {
                 if (kind === 'receive') boost = 1;
+                if (kind === 'send') boost = Math.max(boost, 0.45);
             },
             draw(ctx, t, dt) {
                 boost = Math.max(0, boost - dt * 0.7);

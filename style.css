@@ -24,6 +24,8 @@
 #atmos-root,
 #atmos-fx {
     transition: opacity 0.5s ease;
+    /* изолируем перерисовку: канва меняется каждый кадр, остальное — нет */
+    contain: layout style paint;
 }
 
 /* фон сцены — под чатом */
@@ -110,9 +112,16 @@
     letter-spacing: 0.02em;
 }
 
-.atmos-grade,
-.atmos-shade {
-    transition: opacity 0.8s ease, background 0.8s ease;
+/* Тонировка + затемнение + виньетка + зерно в одном полноэкранном слое:
+   четыре отдельных div'а заставляли браузер композитить их каждый кадр. */
+.atmos-paper {
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.045'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"),
+        radial-gradient(125% 105% at 50% 42%, rgba(0, 0, 0, 0) 38%, rgba(6, 4, 12, 0.3) 78%, rgba(4, 3, 9, 0.5) 100%),
+        linear-gradient(var(--atmos-shade, transparent), var(--atmos-shade, transparent)),
+        linear-gradient(var(--atmos-tint, transparent), var(--atmos-tint, transparent));
+    background-size: 140px 140px, 100% 100%, 100% 100%, 100% 100%;
+    background-repeat: repeat, no-repeat, no-repeat, no-repeat;
 }
 
 /* Сутки: мягкий налёт по часу Scene Panel. Меняется редко, поэтому transition
@@ -126,29 +135,6 @@
 .atmos-flash {
     opacity: 0;
     background: radial-gradient(120% 90% at 50% 78%, rgba(255, 214, 160, 0.5) 0%, rgba(255, 198, 140, 0.16) 38%, rgba(255, 190, 120, 0) 70%);
-}
-
-.atmos-vignette {
-    background: radial-gradient(125% 105% at 50% 42%, rgba(0, 0, 0, 0) 38%, rgba(6, 4, 12, 0.3) 78%, rgba(4, 3, 9, 0.5) 100%);
-    opacity: 0.7;
-}
-
-.atmos-grain {
-    opacity: 0.045;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* Зерно без mix-blend-mode: на мобильных GPU смешивание поверх backdrop-filter
-   чата давало прямоугольные артефакты. Текстура осталась, режим — обычный. */
-
-@keyframes atmos-grain {
-    0% { transform: translate3d(0, 0, 0); }
-    50% { transform: translate3d(-3%, 2%, 0); }
-    100% { transform: translate3d(2%, -3%, 0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .atmos-grain { animation: none; }
 }
 
 /* ============================================================

@@ -125,22 +125,26 @@ registerEffect({
                 if (kind !== 'send') return;
                 gustBoost = 1;
                 const dir = Math.random() < 0.5 ? 1 : -1;
-                const n = env.lite ? 4 : 8 + ((Math.random() * 6) | 0);
+                const n = env.lite ? 6 : 12 + ((Math.random() * 8) | 0);
                 for (let i = 0; i < n; i++) {
-                    const f = make(false);
-                    f.x = dir > 0 ? -rnd(0, w * 0.2) : w + rnd(0, w * 0.2);
-                    f.y = rnd(0, h * 0.9);
-                    f.v = rnd(70, 150);
-                    f.drift = Math.abs(f.drift) * dir * 3.2;
+                    /* берём готовый спрайт у обычного листа, но ставим его в кадр
+                       и гоняем поперёк: порыв должен быть видно сразу, а не
+                       «где-то за краем экрана» */
+                    const f = make(true);
+                    f.x = rnd(-0.05, 1.05) * w;
+                    f.y = rnd(h * 0.12, h);
+                    f.v = rnd(90, 180);
+                    f.drift = dir * rnd(190, 360);
+                    f.sway = rnd(16, 46);
                     f.rot = rnd(0, Math.PI * 2);
                     list.push(f);
                 }
-                if (list.length > wanted * 2.4 + 20) list.splice(0, list.length - Math.round(wanted * 2.4 + 20));
+                if (list.length > wanted * 2.4 + 30) list.splice(0, list.length - Math.round(wanted * 2.4 + 30));
             },
             draw(ctx, t, dt) {
-                gustBoost = Math.max(0, gustBoost - dt * 0.55);
+                gustBoost = Math.max(0, gustBoost - dt * 0.45);
                 const kick = env.kick ? env.kick() : 0;
-                const wind = 1 + gust(t, 5.2) * 0.9 + gustBoost * 2.4 + kick * 2.2;
+                const wind = 1 + gust(t, 5.2) * 0.9 + gustBoost * 3.2 + kick * 2.2;
 
                 for (const f of list) {
                     f.y += f.v * dt;

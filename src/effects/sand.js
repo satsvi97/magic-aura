@@ -1,5 +1,5 @@
 /* Пустыня: дюны (статичный слой) и летящий песок. */
-import { registerEffect, rnd, clamp, budget } from '../engine.js';
+import { registerEffect, rnd, clamp, budget, radialSprite } from '../engine.js';
 
 /* ---------- дюны ---------- */
 registerEffect({
@@ -143,6 +143,7 @@ registerEffect({
         let h = env.h;
         const p = env.params || {};
         const color = p.color || '255,206,150';
+        const sprite = radialSprite(color, 96, 0.35);
         let waves = [];
 
         function seed() {
@@ -169,13 +170,8 @@ registerEffect({
                     b.y -= b.v * dt;
                     if (b.y < h * 0.35) b.y = h + b.r * 0.3;
                     const k = 0.6 + 0.4 * Math.sin(t * 0.6 + b.ph);
-                    const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-                    g.addColorStop(0, `rgba(${color},${b.a * k})`);
-                    g.addColorStop(1, `rgba(${color},0)`);
-                    ctx.fillStyle = g;
-                    ctx.beginPath();
-                    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.globalAlpha = clamp(b.a * k, 0, 1);
+                    ctx.drawImage(sprite, b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
                 }
             },
         };

@@ -1,5 +1,5 @@
 /* Осадки: дождь и снег. Оба эффекта живут в общем canvas движка. */
-import { registerEffect, rnd, clamp, budget, gust } from '../engine.js';
+import { registerEffect, rnd, clamp, budget, gust, radialSprite } from '../engine.js';
 
 /* ---------- дождь ---------- */
 registerEffect({
@@ -24,12 +24,14 @@ registerEffect({
 
         function make(init) {
             const v = rnd(760, 1400) * (env.lite ? 0.9 : 1);
+            const o = rnd(0.14, 0.46);
             return {
                 x: rnd(-0.25, 1.15) * w,
                 y: init ? rnd(0, h) : rnd(-h * 0.4, 0),
                 v,
                 l: rnd(10, 38) * lenK,
-                o: rnd(0.14, 0.46),
+                o,
+                b: Math.min(2, Math.floor((o - 0.14) / 0.11)),
                 w: rnd(0.7, 1.4),
             };
         }
@@ -54,14 +56,22 @@ registerEffect({
                     }
                     if (d.x > w + 40) d.x -= w + 80;
                     if (d.x < -40) d.x += w + 80;
+                }
 
-                    const k = d.l / Math.hypot(wind, 1);
-                    ctx.strokeStyle = `rgba(${color},${d.o})`;
-                    ctx.lineWidth = d.w;
+                /* три прохода по прозрачности: три stroke вместо сотни */
+                for (let b = 0; b < 3; b++) {
+                    ctx.strokeStyle = `rgba(${color},${0.2 + b * 0.12})`;
+                    ctx.lineWidth = 0.7 + b * 0.25;
                     ctx.beginPath();
-                    ctx.moveTo(d.x, d.y);
-                    ctx.lineTo(d.x - wind * k, d.y - k);
-                    ctx.stroke();
+                    let any = false;
+                    for (const d of drops) {
+                        if (d.b !== b) continue;
+                        const k = d.l / Math.hypot(wind, 1);
+                        any = true;
+                        ctx.moveTo(d.x, d.y);
+                        ctx.lineTo(d.x - wind * k, d.y - k);
+                    }
+                    if (any) ctx.stroke();
                 }
             },
         };
@@ -85,6 +95,7 @@ registerEffect({
         let flakes = [];
 
         function make(init) {
+            const o = rnd(0.25, 0.8);
             return {
                 x: rnd(-0.1, 1.1) * w,
                 y: init ? rnd(0, h) : rnd(-h * 0.3, 0),
@@ -93,7 +104,8 @@ registerEffect({
                 sway: rnd(6, 26),
                 ph: rnd(0, Math.PI * 2),
                 sp: rnd(0.3, 1.1),
-                o: rnd(0.25, 0.8),
+                o,
+                b: Math.min(2, Math.floor((o - 0.25) / 0.2)),
             };
         }
 
@@ -120,10 +132,20 @@ registerEffect({
                     }
                     if (f.x > w + 8) f.x -= w + 16;
                     if (f.x < -8) f.x += w + 16;
-                    ctx.globalAlpha = clamp(f.o, 0.05, 1);
+                }
+
+                /* три группы по прозрачности: три fill вместо сотни */
+                for (let b = 0; b < 3; b++) {
+                    ctx.globalAlpha = 0.3 + b * 0.25;
                     ctx.beginPath();
-                    ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-                    ctx.fill();
+                    let any = false;
+                    for (const f of flakes) {
+                        if (f.b !== b) continue;
+                        any = true;
+                        ctx.moveTo(f.x + f.r, f.y);
+                        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                    }
+                    if (any) ctx.fill();
                 }
                 ctx.globalAlpha = 1;
             },
@@ -143,6 +165,7 @@ registerEffect({
         let h = env.h;
         const p = env.params || {};
         const color = p.color || '200,205,235';
+        const sprite = radialSprite(color, 96, 0.45);
         let bands = [];
 
         function seed() {
@@ -178,15 +201,10 @@ registerEffect({
 
                     const bx = b.x + shift.x;
                     const by = b.y + shift.y;
-                    const g = ctx.createRadialGradient(bx, by, 0, bx, by, b.r);
-                    g.addColorStop(0, `rgba(${color},${b.a})`);
-                    g.addColorStop(0.55, `rgba(${color},${b.a * 0.45})`);
-                    g.addColorStop(1, `rgba(${color},0)`);
-                    ctx.fillStyle = g;
-                    ctx.beginPath();
-                    ctx.arc(bx, by, b.r, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.globalAlpha = b.a;
+                    ctx.drawImage(sprite, bx - b.r, by - b.r, b.r * 2, b.r * 2);
                 }
+                ctx.globalAlpha = 1;
             },
         };
     },

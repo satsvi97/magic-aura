@@ -1,5 +1,5 @@
 /* Пепел и низкий туман — «после пожара» и «кладбищенское утро». */
-import { registerEffect, rnd, clamp, budget, gust } from '../engine.js';
+import { registerEffect, rnd, clamp, budget, gust, radialSprite } from '../engine.js';
 
 /* ---------- пепел ---------- */
 registerEffect({
@@ -80,7 +80,9 @@ registerEffect({
         const p = env.params || {};
         const color = p.color || '196,200,220';
         const level = p.level ?? 0.32; // насколько высоко поднимается
+        const sprite = radialSprite(color, 96, 0.4);
         let bands = [];
+        let veil = null;
 
         function seed() {
             const n = env.lite ? 4 : 7;
@@ -100,14 +102,17 @@ registerEffect({
             resize(nw, nh) {
                 w = nw;
                 h = nh;
+                veil = null;
                 seed();
             },
             draw(ctx, t, dt) {
-                /* общая дымка по нижней трети */
-                const veil = ctx.createLinearGradient(0, h * (1 - level), 0, h);
-                veil.addColorStop(0, `rgba(${color},0)`);
-                veil.addColorStop(0.65, `rgba(${color},0.05)`);
-                veil.addColorStop(1, `rgba(${color},0.11)`);
+                /* общая дымка по нижней трети: градиент строим один раз, а не каждый кадр */
+                if (!veil) {
+                    veil = ctx.createLinearGradient(0, h * (1 - level), 0, h);
+                    veil.addColorStop(0, `rgba(${color},0)`);
+                    veil.addColorStop(0.65, `rgba(${color},0.05)`);
+                    veil.addColorStop(1, `rgba(${color},0.11)`);
+                }
                 ctx.fillStyle = veil;
                 ctx.fillRect(0, h * (1 - level), w, h * level);
 
@@ -117,15 +122,10 @@ registerEffect({
                     if (b.x < -b.r) b.x = w + b.r;
                     if (b.x > w + b.r) b.x = -b.r;
 
-                    const grd = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-                    grd.addColorStop(0, `rgba(${color},${b.a})`);
-                    grd.addColorStop(0.6, `rgba(${color},${b.a * 0.35})`);
-                    grd.addColorStop(1, `rgba(${color},0)`);
-                    ctx.fillStyle = grd;
-                    ctx.beginPath();
-                    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.globalAlpha = b.a;
+                    ctx.drawImage(sprite, b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
                 }
+                ctx.globalAlpha = 1;
             },
         };
     },

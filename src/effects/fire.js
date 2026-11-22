@@ -130,6 +130,7 @@ registerEffect({
         let list = [];
 
         function make(init) {
+            const o = rnd(0.25, 0.85);
             return {
                 x: rnd(0, w),
                 y: init ? rnd(0, h) : rnd(0, h),
@@ -138,7 +139,8 @@ registerEffect({
                 vy: rnd(-13, 5),
                 sp: rnd(0.2, 1.1),
                 ph: rnd(0, Math.PI * 2),
-                o: rnd(0.25, 0.85),
+                o,
+                b: Math.min(2, Math.floor((o - 0.25) / 0.2)),
             };
         }
         list = Array.from({ length: budget(w, h, 15000, 16, 110, env) }, () => make(true));
@@ -157,12 +159,21 @@ registerEffect({
                     if (m.x > w + 10) m.x = -10;
                     if (m.y < -10) m.y = h + 10;
                     if (m.y > h + 10) m.y = -10;
+                }
 
-                    const a = m.o * (0.45 + 0.55 * Math.sin(t * m.sp + m.ph));
-                    ctx.fillStyle = `rgba(${color},${clamp(a, 0, 1)})`;
+                /* три группы: три fill вместо сотни, мерцание остаётся групповым */
+                for (let b = 0; b < 3; b++) {
+                    const pulse = 0.45 + 0.55 * Math.sin(t * (0.55 + b * 0.3) + b * 2.1);
+                    ctx.fillStyle = `rgba(${color},${clamp((0.3 + b * 0.22) * pulse, 0, 1)})`;
                     ctx.beginPath();
-                    ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
-                    ctx.fill();
+                    let any = false;
+                    for (const m of list) {
+                        if (m.b !== b) continue;
+                        any = true;
+                        ctx.moveTo(m.x + m.r, m.y);
+                        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+                    }
+                    if (any) ctx.fill();
                 }
             },
         };

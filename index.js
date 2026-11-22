@@ -153,7 +153,7 @@ function rememberChat() {
 
 const engine = new Engine();
 
-const VERSION = '0.6.0';
+const VERSION = '0.6.1';
 
 const ui = createUI({
     version: VERSION,
@@ -406,6 +406,12 @@ const api = {
     },
     /* Что именно Aura прочитала из панели и во что это превратилось. */
     panelNote: panelNoteText,
+    /* Ручной порыв: 'send' или 'receive'. Уважает выключатель «Реакция на сообщения». */
+    burst(kind = 'send') {
+        if (!settings.enabled || !settings.interactive) return false;
+        engine.burst(kind === 'receive' ? 'receive' : 'send');
+        return true;
+    },
     /* Открыть быстрый выбор сцены у кнопки в углу. */
     open() {
         ui.togglePop(true);
@@ -606,6 +612,12 @@ async function boot() {
         return;
     }
     settings = merge(DEFAULTS, ctx.extensionSettings?.[STORE] || {});
+    /* Первый запуск на слабом устройстве: сразу Lite, чтобы не пугать лагами.
+       Если человек уже сохранял настройки — не трогаем его выбор. */
+    if (!ctx.extensionSettings?.[STORE]) {
+        const weak = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 3;
+        if (weak) settings.lite = true;
+    }
 
     engine.mount();
     engine.setLite(settings.lite);

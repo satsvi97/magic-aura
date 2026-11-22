@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.6.1 — quiet sky, lighter engine
+
+**Look**
+- **No more glowing ball in «Северное сияние»** — the moon is gone, only the curtains and stars remain;
+  the aurora itself drifts slower and smoother.
+- **Night moon is now a soft light, not a disc:** no hard sphere, just a faint halo. It still follows
+  the hour, just without the “lamp” glare.
+- **Sending a message really does tear leaves across the screen now** (they spawn inside the frame,
+  not off-screen), and on sky scenes it also sends a shooting star. `window.MagicAura.burst('send')`
+  exists for testing.
+
+**Performance**
+- **Own frame limiter.** Before, the loop ran at the display rate — 165/240 Hz monitors meant
+  165/240 redraws per second. Now 60 fps, 40 on touch screens, 30 in Lite, 20 when the window is not
+  focused.
+- **Pixel budget for the canvas:** max ~3.2 Mpx, touch DPR capped at 1.25, Lite at 1.0 — 4K screens
+  no longer get an 8–18 Mpx buffer.
+- **Batched drawing:** stars, snow, rain and dust now draw in 3–4 grouped paths instead of one
+  `fill`/`stroke` per particle (200+ calls per frame → handful).
+- **No gradients inside the frame:** mist, heat shimmer and ground fog use pre-built sprites;
+  the fog veil gradient is cached.
+- **Touch screens get Lite-level particle budgets automatically**; weak devices (≤4 cores / ≤3 GB)
+  start in Lite on first run.
+- **Layers merged.** Tint, shade, vignette and grain were four full-screen divs; now one
+  `.atmos-paper` with four background layers. This is what removed most of the compositing cost.
+- Layers are isolated with `contain: paint` so the changing canvas no longer repaints the static sky.
+- The Shade slider now actually works (before, the overlay had no background and the value went nowhere).
+
+Measured in headless Chrome (software raster, so real GPUs are cheaper). Desktop 1400×900, aurora:
+**~5.8% of one core** (1.2% JS) after the changes, versus ~25% before the batching and ~56% before the
+layer merge. A 4× CPU-throttled 390×844 session (a stand-in for a weak phone): **~30% of one core**
+with aurora, ~27% with rain, ~23% in Lite — previously ~96%. Idle (aura off) is ~0%.
+
 ## 0.6.0 — living atmosphere
 
 Everything below is optional and switchable: public extension, so the new effects must never tax a
