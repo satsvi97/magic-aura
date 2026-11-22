@@ -28,7 +28,7 @@ Requires SillyTavern **1.12+**. No API, no external requests, nothing is written
 
 | id | Name | What's inside |
 |---|---|---|
-| `night` | Night Silence | stars, dust, moon disc with halo |
+| `night` | Night Silence | stars, dust, a moon disc that follows the hour, rare shooting stars |
 | `storm` | Thunderstorm | heavy rain, lightning, low mist |
 | `rainy` | Grey Rain | steady rain, overcast sky |
 | `snow` | Snowfall | snowflakes, cold haze |
@@ -49,7 +49,8 @@ Requires SillyTavern **1.12+**. No API, no external requests, nothing is written
 | `sunny` | Sunny Day | warm light shafts, floating pollen |
 | `hail` | Hail | fast hail with bounces, ground mist |
 | `blizzard` | Blizzard | sideways snow, dense low mist |
-| `birthday` | Candles & Cake | candle halo, golden sparks |
+| `aurora` | Northern Lights | procedural aurora curtains, moon, light snow, dust |
+| `birthday` | Candles & Cake | candle halo, golden sparks, dust that follows the cursor |
 
 ![Desert](preview/preview-desert.jpg)
 ![Sakura](preview/preview-sakura.jpg)
@@ -117,7 +118,10 @@ the next weather/place change takes over again.
 | **Scene background** | how strongly the sky gradient covers the chat — the main readability guard, default 45% |
 | Shade | black overlay for night / gloomy moods |
 | Layer | **background only** (under the chat, default) or **above the chat** (particles over the messages, sky stays behind) |
-| Lite mode | half the particles, DPR 1 — for weak devices |
+| Lite mode | half the particles, DPR 1 — for weak devices; also disables parallax |
+| Mouse parallax | mist, branches, aurora, crows and dust move in layers with the cursor — desktop only, off on touch |
+| React to messages | sending a message throws a gust through leaves and rain, receiving one gives a warm flash and sparks |
+| Day cycle | the sky is tinted by the hour from Scene Panel (`sessionHour`, or the time-of-day text) |
 | React to text | picks a scene from the message text (at most once per 20 s) |
 | Scene per chat | remembers the scene in chat metadata |
 | Corner button | show / hide, left or right |
@@ -166,6 +170,9 @@ registerEffect({
 - Particle count scales with screen area and is capped.
 - Sky, grade, vignette and film grain are pure CSS — they cost no frames.
 - Pauses on a hidden tab; `prefers-reduced-motion` keeps the sky but drops the motion; DPR is capped at 1.5 (1 in Lite).
+- Parallax and message reactions are separate switches, and both are off in Lite / on touch screens: the base picture costs the same as before.
+- The day-cycle tint is one CSS overlay that changes once per tick when the hour actually moves.
+- Ambient events (crows, occasional meteors) are budgeted and skipped in Lite.
 
 ## Credits & licence
 

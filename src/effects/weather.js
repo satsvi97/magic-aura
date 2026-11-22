@@ -44,9 +44,10 @@ registerEffect({
             },
             draw(ctx, t, dt) {
                 ctx.lineCap = 'round';
+                const kick = 1 + (env.kick ? env.kick() : 0) * 2.4;
                 for (const d of drops) {
                     d.y += d.v * dt;
-                    d.x += d.v * wind * dt;
+                    d.x += d.v * wind * kick * dt;
                     if (d.y - d.l > h + 20) {
                         Object.assign(d, make(false));
                         continue;
@@ -109,7 +110,7 @@ registerEffect({
             },
             draw(ctx, t, dt) {
                 ctx.fillStyle = `rgb(${color})`;
-                const g = 1 + gust(t, 3.1) * 1.4;
+                const g = 1 + gust(t, 3.1) * 1.4 + (env.kick ? env.kick() : 0) * 2.6;
                 for (const f of flakes) {
                     f.y += f.v * dt;
                     f.x += (Math.sin(t * f.sp + f.ph) * f.sway + f.v * wind * g) * dt;
@@ -166,6 +167,7 @@ registerEffect({
                 seed();
             },
             draw(ctx, t, dt) {
+                const shift = env.shift ? env.shift(1.1) : { x: 0, y: 0 };
                 for (const b of bands) {
                     b.x += (b.vx + Math.sin(t * b.sp + b.ph) * 6) * dt;
                     b.y += b.vy * dt;
@@ -174,13 +176,15 @@ registerEffect({
                     if (b.y < -b.r) b.y = h + b.r;
                     if (b.y > h + b.r) b.y = -b.r;
 
-                    const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+                    const bx = b.x + shift.x;
+                    const by = b.y + shift.y;
+                    const g = ctx.createRadialGradient(bx, by, 0, bx, by, b.r);
                     g.addColorStop(0, `rgba(${color},${b.a})`);
                     g.addColorStop(0.55, `rgba(${color},${b.a * 0.45})`);
                     g.addColorStop(1, `rgba(${color},0)`);
                     ctx.fillStyle = g;
                     ctx.beginPath();
-                    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                    ctx.arc(bx, by, b.r, 0, Math.PI * 2);
                     ctx.fill();
                 }
             },

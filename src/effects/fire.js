@@ -32,6 +32,8 @@ registerEffect({
         const scale = p.size ?? 1;
         const sprite = glowSprite(color, 2);
         let list = [];
+        /* вспышки от интерактива: живут пару секунд, гаснут и исчезают */
+        let flares = [];
 
         function make(init) {
             const r = rnd(0.7, 2) * scale;
@@ -59,6 +61,22 @@ registerEffect({
                 h = nh;
                 seed();
             },
+            /** Вспышка искр: входящее — у нижней кромки, исходящее — по всему низу. */
+            burst(kind) {
+                const n = env.lite ? 8 : kind === 'receive' ? 16 : 24;
+                for (let i = 0; i < n; i++) {
+                    flares.push({
+                        x: rnd(w * 0.15, w * 0.85),
+                        y: h - rnd(0, h * 0.12),
+                        r: rnd(1.2, 3.2) * scale,
+                        vx: rnd(-38, 38),
+                        vy: rnd(-190, -70),
+                        life: rnd(0.9, 1.9),
+                        age: 0,
+                        o: rnd(0.5, 1),
+                    });
+                }
+            },
             draw(ctx, t, dt) {
                 for (const e of list) {
                     e.y -= e.v * dt;
@@ -71,6 +89,23 @@ registerEffect({
                     const s = e.r * 4.5;
                     ctx.globalAlpha = clamp(k, 0, 1);
                     ctx.drawImage(sprite, e.x - s / 2, e.y - s / 2, s, s);
+                }
+
+                for (let i = flares.length - 1; i >= 0; i--) {
+                    const f = flares[i];
+                    f.age += dt;
+                    if (f.age >= f.life) {
+                        flares.splice(i, 1);
+                        continue;
+                    }
+                    f.x += f.vx * dt;
+                    f.y += f.vy * dt;
+                    f.vy += 120 * dt;
+                    f.vx *= 1 - 0.6 * dt;
+                    const k = 1 - f.age / f.life;
+                    const s = f.r * 6 * (0.6 + k * 0.8);
+                    ctx.globalAlpha = clamp(k * f.o, 0, 1);
+                    ctx.drawImage(sprite, f.x - s / 2, f.y - s / 2, s, s);
                 }
                 ctx.globalAlpha = 1;
             },

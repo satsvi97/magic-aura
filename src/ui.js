@@ -77,6 +77,9 @@ export function createUI(api) {
                         <label class="atmos-check"><input type="checkbox" data-atmos="syncPanel"><span></span>Синхронизация со Scene Panel</label>
                         <div class="atmos-panel-src" data-atmos-src></div>
                         <label class="atmos-check"><input type="checkbox" data-atmos="lite"><span></span>Lite-режим</label>
+                        <label class="atmos-check atmos-desktop-only"><input type="checkbox" data-atmos="parallax"><span></span>Параллакс от мыши</label>
+                        <label class="atmos-check"><input type="checkbox" data-atmos="interactive"><span></span>Реакция на сообщения</label>
+                        <label class="atmos-check"><input type="checkbox" data-atmos="dayCycle"><span></span>Сутки по часам сцены</label>
                         <label class="atmos-check"><input type="checkbox" data-atmos="autoMood"><span></span>Реагировать на текст</label>
                         <label class="atmos-check"><input type="checkbox" data-atmos="perChat"><span></span>Сцена у каждого чата</label>
                         <label class="atmos-check atmos-desktop-only"><input type="checkbox" data-atmos="showFab"><span></span>Кнопка на экране</label>
@@ -233,7 +236,7 @@ export function createUI(api) {
                 if (out) out.textContent = sl.fmt(v);
             }
 
-            for (const key of ['lite', 'autoMood', 'perChat', 'showFab', 'debug', 'syncPanel']) {
+            for (const key of ['lite', 'autoMood', 'perChat', 'showFab', 'debug', 'syncPanel', 'parallax', 'interactive', 'dayCycle']) {
                 const el = p.querySelector(`[data-atmos="${key}"]`);
                 if (el) el.checked = !!s[key];
             }

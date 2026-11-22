@@ -33,7 +33,7 @@ registerEffect({
             for (let i = 0; i < count; i++) {
                 const x = ((i + 0.5) / count) * w + rnd(-w * 0.06, w * 0.06);
                 const band = rnd(w * 0.035, w * 0.11);
-                const alpha = rnd(0.05, 0.1) * clamp(strength, 0.2, 2);
+                const alpha = rnd(0.12, 0.2) * clamp(strength, 0.2, 2);
                 const angle = rnd(-0.3, -0.12);
                 const len = h * 1.45;
 

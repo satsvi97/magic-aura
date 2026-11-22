@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.6.0 — living atmosphere
+
+Everything below is optional and switchable: public extension, so the new effects must never tax a
+phone that did not ask for them.
+
+- **Toggle «Параллакс от мыши»** (`parallax`): mist, branches, aurora, crows and dust drift in
+  layers with the cursor. Desktop only, off in Lite and on touch devices.
+- **Toggle «Реакция на сообщения»** (`interactive`): sending a message throws a gust through leaves
+  and snow and pushes rain sideways; receiving one gives a soft warm flash, a burst of embers and a
+  flare of dust. Off = zero extra work.
+- **Toggle «Сутки по часам сцены»** (`dayCycle`): the sky is tinted by the hour from Scene Panel
+  (`sessionHour`, or the time-of-day text as a fallback). Changes slowly, cost is one CSS overlay.
+- **New scene «Северное сияние»** with procedural aurora curtains (one offscreen sprite, three
+  additive passes).
+- **New effect `celestial`:** moon and sun discs on an arc that follows the hour, replacing the flat
+  CSS moon in night scenes.
+- **New effect `dustlight`:** glowing dust that brightens near the cursor and flashes on a received
+  message — in candle rooms, halls, the forest, the garden and sunny days.
+- **New effect `crows`:** rare flocks of silhouettes across the frame (forest, autumn, garden).
+- Night and Starfall also get occasional shooting stars.
+
 ## 0.5.1 — Scene Panel actually reads the open chat
 
 - **Fixed: with Scene Panel sync on, the scene was stuck on «Облачно».** SillyTavern replaces

@@ -115,6 +115,19 @@
     transition: opacity 0.8s ease, background 0.8s ease;
 }
 
+/* Сутки: мягкий налёт по часу Scene Panel. Меняется редко, поэтому transition
+   длинный — смена часа выглядит как медленное таяние света. */
+.atmos-day {
+    opacity: 0;
+    transition: opacity 3.5s ease, background 3.5s ease;
+}
+
+/* Вспышка на входящее сообщение: тёплый ореол снизу, гаснет за секунду. */
+.atmos-flash {
+    opacity: 0;
+    background: radial-gradient(120% 90% at 50% 78%, rgba(255, 214, 160, 0.5) 0%, rgba(255, 198, 140, 0.16) 38%, rgba(255, 190, 120, 0) 70%);
+}
+
 .atmos-vignette {
     background: radial-gradient(125% 105% at 50% 42%, rgba(0, 0, 0, 0) 38%, rgba(6, 4, 12, 0.3) 78%, rgba(4, 3, 9, 0.5) 100%);
     opacity: 0.7;

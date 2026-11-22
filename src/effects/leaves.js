@@ -85,6 +85,8 @@ registerEffect({
         const wind = p.wind ?? 1;
         const wanted = p.count ?? (shape === 'petal' ? 34 : 26);
         let list = [];
+        /* локальный порыв от интерактива: короткий, чтобы не ломать общий ритм */
+        let gustBoost = 0;
 
         function make(init) {
             const depth = rnd(0.55, 1.35);
@@ -118,11 +120,32 @@ registerEffect({
                 h = nh;
                 seed();
             },
+            /** Порыв на отправленное сообщение: листва летит через кадр. */
+            burst(kind) {
+                if (kind !== 'send') return;
+                gustBoost = 1;
+                const dir = Math.random() < 0.5 ? 1 : -1;
+                const n = env.lite ? 4 : 8 + ((Math.random() * 6) | 0);
+                for (let i = 0; i < n; i++) {
+                    const f = make(false);
+                    f.x = dir > 0 ? -rnd(0, w * 0.2) : w + rnd(0, w * 0.2);
+                    f.y = rnd(0, h * 0.9);
+                    f.v = rnd(70, 150);
+                    f.drift = Math.abs(f.drift) * dir * 3.2;
+                    f.rot = rnd(0, Math.PI * 2);
+                    list.push(f);
+                }
+                if (list.length > wanted * 2.4 + 20) list.splice(0, list.length - Math.round(wanted * 2.4 + 20));
+            },
             draw(ctx, t, dt) {
+                gustBoost = Math.max(0, gustBoost - dt * 0.55);
+                const kick = env.kick ? env.kick() : 0;
+                const wind = 1 + gust(t, 5.2) * 0.9 + gustBoost * 2.4 + kick * 2.2;
+
                 for (const f of list) {
                     f.y += f.v * dt;
-                    f.x += (f.drift + Math.sin(t * f.spd + f.ph) * f.sway) * (1 + gust(t, 5.2) * 0.9) * dt;
-                    f.rot += f.spin * dt;
+                    f.x += (f.drift + Math.sin(t * f.spd + f.ph) * f.sway) * wind * dt;
+                    f.rot += f.spin * dt * (1 + gustBoost * 1.6);
 
                     if (f.y - f.r > h + 20) {
                         Object.assign(f, make(false));

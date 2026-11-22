@@ -65,6 +65,9 @@ const settings = {
     showFab: true,
     fabPos: 'right',
     layer: 'behind',
+    parallax: true,
+    interactive: true,
+    dayCycle: true,
     look: { density: 1, opacity: 0.9, speed: 1, size: 1, shade: 0.28, sky: 0.45 },
 };
 
@@ -91,13 +94,13 @@ function applyScene(id) {
 }
 
 const ui = createUI({
-    version: '0.5.1',
+    version: '0.6.0',
     scenes: SCENES,
     getSettings: () => settings,
     setScene: (id) => applyScene(id),
-    patch: (key, value) => { settings[key] = value; if (key === 'lite') engine.setLite(value); applyScene(settings.scene); },
+    patch: (key, value) => { settings[key] = value; if (key === 'lite') engine.setLite(value); if (key === 'parallax') engine.setParallax(value); if (key === 'dayCycle') engine.setDayCycle(value); applyScene(settings.scene); },
     patchLook: (key, value) => { settings.look[key] = value; engine.setLook(settings.look); if (key === 'density') engine.rebuild(); ui.refresh(); },
-    reset: () => { const s = settings.scene; Object.assign(settings, { enabled: true, lite: false, autoMood: false, perChat: false, showFab: true, fabPos: 'right', layer: 'behind', look: { density: 1, opacity: 0.9, speed: 1, size: 1, shade: 0.28, sky: 0.45 } }); applyScene(s); },
+    reset: () => { const s = settings.scene; Object.assign(settings, { enabled: true, lite: false, autoMood: false, perChat: false, showFab: true, fabPos: 'right', layer: 'behind', parallax: true, interactive: true, dayCycle: true, look: { density: 1, opacity: 0.9, speed: 1, size: 1, shade: 0.28, sky: 0.45 } }); applyScene(s); },
 });
 
 ui.mountPanel(document.getElementById('extensions_settings2'));

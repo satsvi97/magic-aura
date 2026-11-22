@@ -32,6 +32,38 @@ export function gust(t, seed = 0) {
 const EFFECTS = new Map();
 const SKIES = new Map();
 
+/**
+ * Цвет «суток» по часу: ночь — холодная синь, рассвет — медь, день — почти
+ * прозрачный, закат — ржавый, вечер — фиолет. Четвёртое число — прозрачность.
+ */
+export function tintForHour(hour) {
+    const stops = [
+        [0, [24, 22, 62, 0.5]],
+        [4, [38, 32, 74, 0.44]],
+        [6, [122, 74, 72, 0.3]],
+        [8, [92, 96, 124, 0.16]],
+        [12, [104, 108, 138, 0.12]],
+        [16, [110, 110, 144, 0.14]],
+        [18, [152, 88, 82, 0.26]],
+        [20, [104, 54, 92, 0.34]],
+        [22, [38, 32, 74, 0.46]],
+        [24, [24, 22, 62, 0.5]],
+    ];
+    const h = ((hour % 24) + 24) % 24;
+    let a = stops[0];
+    let b = stops[stops.length - 1];
+    for (let i = 0; i < stops.length - 1; i++) {
+        if (h >= stops[i][0] && h <= stops[i + 1][0]) {
+            a = stops[i];
+            b = stops[i + 1];
+            break;
+        }
+    }
+    const k = b[0] === a[0] ? 0 : (h - a[0]) / (b[0] - a[0]);
+    const mix = (i) => Math.round(a[1][i] + (b[1][i] - a[1][i]) * k);
+    return [mix(0), mix(1), mix(2), a[1][3] + (b[1][3] - a[1][3]) * k];
+}
+
 export function registerEffect(def) {
     if (!def || !def.id) throw new Error('Atmos: эффект без id');
     EFFECTS.set(def.id, def);
@@ -93,6 +125,22 @@ export class Engine {
         this.layer = 'behind';
         this.reduced = prefersReducedMotion();
 
+        /* Параллакс и интерактив — отдельные выключатели: расширение публичное,
+           и слабые телефоны не должны платить за красоту, которую не просили. */
+        this.parallax = true;
+        this.coarse = false;
+        try {
+            this.coarse = window.matchMedia('(pointer: coarse)').matches;
+        } catch {
+            this.coarse = false;
+        }
+        this.pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+
+        /* Сутки: час 0–24 из Scene Panel (или из времени суток), затемняем небо. */
+        this.dayCycle = true;
+        this.hour = null;
+        this.kickAmt = 0;
+
         this._frame = this._frame.bind(this);
         this._onResize = this._onResize.bind(this);
         this._onVisibility = this._onVisibility.bind(this);
@@ -114,10 +162,12 @@ export class Engine {
         root.className = 'atmos-root off';
         root.innerHTML = `
             <div class="atmos-sky"></div>
+            <div class="atmos-day"></div>
             <div class="atmos-grade"></div>
             <div class="atmos-shade"></div>
             <div class="atmos-vignette"></div>
             <div class="atmos-grain"></div>
+            <div class="atmos-flash"></div>
         `;
 
         /* частицы — отдельным слоем, чтобы их можно было поднять над чатом,
@@ -151,16 +201,34 @@ export class Engine {
 
         this.nodes = {
             sky: root.querySelector('.atmos-sky'),
+            day: root.querySelector('.atmos-day'),
             grade: root.querySelector('.atmos-grade'),
             shade: root.querySelector('.atmos-shade'),
             vignette: root.querySelector('.atmos-vignette'),
             grain: root.querySelector('.atmos-grain'),
+            flash: root.querySelector('.atmos-flash'),
             debug: fx.querySelector('.atmos-debug'),
         };
 
         window.addEventListener('resize', this._onResize, { passive: true });
         window.visualViewport?.addEventListener('resize', this._onResize, { passive: true });
         document.addEventListener('visibilitychange', this._onVisibility);
+
+        /* Один слушатель на весь параллакс: только запоминаем позицию курсора,
+           пересчёт — в кадре, без лишних чтений раскладки. */
+        this._onPointer = (e) => {
+            const p = this.pointer;
+            if (!this.parallax || this.lite || this.coarse) {
+                p.tx = 0;
+                p.ty = 0;
+                return;
+            }
+            const vw = this.w || window.innerWidth || 1;
+            const vh = this.h || window.innerHeight || 1;
+            p.tx = clamp(((e.clientX || 0) / vw) * 2 - 1, -1, 1);
+            p.ty = clamp(((e.clientY || 0) / vh) * 2 - 1, -1, 1);
+        };
+        window.addEventListener('pointermove', this._onPointer, { passive: true });
 
         /* ST меняет раскладку без события resize (панели, формат окна, зум) —
            поэтому слушаем и сам документ, иначе canvas остаётся старого размера
@@ -198,6 +266,7 @@ export class Engine {
         this._onUiAction = null;
         clearTimeout(this._uiTimer);
         window.removeEventListener('resize', this._onResize);
+        window.removeEventListener('pointermove', this._onPointer);
         window.visualViewport?.removeEventListener('resize', this._onResize);
         document.removeEventListener('visibilitychange', this._onVisibility);
         if (this._ro) {
@@ -358,6 +427,78 @@ export class Engine {
         this.resize();
         this.applyLook();
         if (this.scene) this.rebuild();
+    }
+
+    /* ---------- параллакс, сутки, интерактив ---------- */
+
+    /** Параллакс от курсора. На тач-устройствах и в Lite выключен. */
+    setParallax(on) {
+        this.parallax = !!on;
+        if (!this.parallax) {
+            this.pointer.tx = 0;
+            this.pointer.ty = 0;
+        }
+    }
+
+    /** Сутки по часам Scene Panel: мягкий цветной налёт поверх неба. */
+    setDayCycle(on) {
+        this.dayCycle = !!on;
+        this._applyDay();
+    }
+
+    /** @param {number|null} hour 0–24; null — не подкрашивать */
+    setHour(hour) {
+        const v = Number.isFinite(hour) ? ((hour % 24) + 24) % 24 : null;
+        if (v === this.hour) return;
+        this.hour = v;
+        this._applyDay();
+    }
+
+    _applyDay() {
+        const el = this.nodes?.day;
+        if (!el) return;
+        if (!this.dayCycle || this.hour === null) {
+            el.style.opacity = '0';
+            return;
+        }
+        const [r, g, b, a] = tintForHour(this.hour);
+        el.style.background = `rgb(${r},${g},${b})`;
+        el.style.opacity = String(a);
+    }
+
+    /** Порыв: краткий общий «ветер» для падающих эффектов. */
+    kick(strength = 1) {
+        this.kickAmt = Math.round(Math.min(1.6, Math.max(this.kickAmt, strength)) * 100) / 100;
+    }
+
+    /**
+     * Интерактив на сообщения: «send» — порыв ветра, «receive» — мягкая вспышка.
+     * Эффекты, которым есть что добавить, реализуют inst.burst(kind).
+     */
+    burst(kind = 'send') {
+        if (!this.root) return;
+        if (kind === 'receive') this._flash();
+        if (kind === 'send') this.kick(1);
+        for (const pane of this.panes) {
+            for (const it of pane.inst) {
+                try {
+                    it.inst.burst?.(kind);
+                } catch {
+                    /* эффект не обязан уметь бурст */
+                }
+            }
+        }
+    }
+
+    _flash() {
+        const el = this.nodes?.flash;
+        if (!el) return;
+        el.style.transition = 'none';
+        el.style.opacity = '0.85';
+        requestAnimationFrame(() => {
+            el.style.transition = 'opacity 1.1s ease-out';
+            el.style.opacity = '0';
+        });
     }
 
     /** Настроение сцены: множитель затемнения (Scene Panel отдаёт «тон»). */
@@ -558,6 +699,21 @@ export class Engine {
                 rnd,
                 clamp,
                 pick,
+                /* смещение от курсора для «глубины»: k — сила слоя */
+                shift: (k = 1) => ({
+                    x: this.pointer.x * k * Math.min(this.w, 1400) * 0.016,
+                    y: this.pointer.y * k * Math.min(this.h, 900) * 0.012,
+                }),
+                parallaxOn: () => this.parallax && !this.lite && !this.coarse,
+                /* текущий порыв (0…1.6) для осадков и листвы */
+                kick: () => this.kickAmt,
+                /* час суток (0–24) или null — для светила и «неба по часам» */
+                hour: () => this.hour,
+                /* позиция курсора в пикселях слоя (для эффектов, которые тянутся к нему) */
+                pointer: () => ({
+                    x: (this.pointer.x * 0.5 + 0.5) * this.w,
+                    y: (this.pointer.y * 0.5 + 0.5) * this.h,
+                }),
             };
             try {
                 const inst = def.create(env) || {};
@@ -628,6 +784,13 @@ export class Engine {
 
         const t = (ts - this.t0) / 1000;
         const step = dt * clamp(this.look.speed, 0.05, 4);
+
+        /* Курсор догоняем плавно, иначе параллакс дёргается на каждом движении. */
+        const p = this.pointer;
+        const ease = Math.min(1, dt * 6);
+        p.x += (p.tx - p.x) * ease;
+        p.y += (p.ty - p.y) * ease;
+        if (this.kickAmt > 0) this.kickAmt = Math.max(0, this.kickAmt - dt * 0.9);
 
         for (const pane of this.panes) {
             const ctx = pane.ctx;

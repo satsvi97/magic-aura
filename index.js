@@ -22,6 +22,11 @@ const DEFAULTS = {
     layer: 'behind',
     debug: false,
     syncPanel: true,
+    /* Отдельные выключатели для публичного расширения: слабый телефон не должен
+       платить за параллакс и интерактив, которые никто не просил. */
+    parallax: true,
+    interactive: true,
+    dayCycle: true,
     look: { density: 1, opacity: 0.9, speed: 1, size: 1, shade: 0.28, sky: 0.45 },
 };
 
@@ -148,7 +153,7 @@ function rememberChat() {
 
 const engine = new Engine();
 
-const VERSION = '0.5.1';
+const VERSION = '0.6.0';
 
 const ui = createUI({
     version: VERSION,
@@ -197,6 +202,13 @@ function afterChange(key) {
     }
     if (key === 'debug') {
         engine.setDebug(settings.debug);
+    }
+    if (key === 'parallax') {
+        engine.setParallax(settings.parallax);
+    }
+    if (key === 'dayCycle') {
+        engine.setDayCycle(settings.dayCycle);
+        syncHour();
     }
     if (key === 'perChat' && !settings.perChat) {
         const meta = chatMeta();
@@ -258,10 +270,40 @@ function applyScene(id, opts = {}) {
 let panelKeyCache = '';
 let lastAuraHint = null;
 
+/**
+ * Час суток из панели: точные часы сессии, если они есть, иначе — по тексту
+ * «ночь / рассвет / день / закат». Без панели час не задаём, и небо не трогаем.
+ */
+function panelHour(state) {
+    if (!state) return null;
+    const h = Number(state.sessionHour);
+    if (Number.isFinite(h) && state.sessionHour !== '' && state.sessionHour != null) {
+        return h + (Number(state.sessionMinute) || 0) / 60;
+    }
+    const t = String(state.timeOfDay || '').toLowerCase();
+    if (!t) return null;
+    if (/ноч|полноч|night|natt|ніч/.test(t)) return 23;
+    if (/рассвет|утр|dawn|morning|morgon|ранок/.test(t)) return 6;
+    if (/закат|вечер|сумерк|sunset|evening|dusk|kväll|вечір/.test(t)) return 19;
+    if (/день|полдень|day|noon/.test(t)) return 12;
+    return null;
+}
+
+function syncHour(state) {
+    if (!settings.dayCycle) {
+        engine.setHour(null);
+        return;
+    }
+    engine.setHour(panelHour(state || readPanelState(chatMeta())));
+}
+
 function syncFromPanel(force = false, fresh = false) {
     if (!ctx || !settings.enabled || !settings.syncPanel) return;
     const state = readPanelState(chatMeta());
     if (!state) return;
+
+    /* Сутки обновляем всегда: час может смениться без смены погоды и места. */
+    syncHour(state);
 
     const key = panelKey(state);
     if (!force && !fresh && key === panelKeyCache) return;
@@ -315,6 +357,9 @@ function apiState() {
         sceneName: settings.scene ? SCENE_BY_ID.get(settings.scene)?.name || null : null,
         layer: settings.layer,
         syncPanel: !!settings.syncPanel,
+        parallax: !!settings.parallax,
+        interactive: !!settings.interactive,
+        dayCycle: !!settings.dayCycle,
         panel: Boolean(readPanelState(chatMeta())),
     };
 }
@@ -419,6 +464,9 @@ let lastMoodAt = 0;
 const MOOD_COOLDOWN = 20000;
 
 function onMessageReceived(messageId) {
+    /* вспышка на входящее: тёплый ореол снизу, если интерактив включён */
+    if (settings.enabled && settings.interactive) engine.burst('receive');
+
     /* Scene Panel разбирает тег [[scene: ...]] из этого же сообщения;
        ждём немного, чтобы прочитать уже обновлённое состояние */
     setTimeout(() => syncFromPanel(), 600);
@@ -445,6 +493,12 @@ function bindEvents() {
     const types = ctx.eventTypes || {};
     if (types.CHAT_CHANGED) ctx.eventSource.on(types.CHAT_CHANGED, onChatChanged);
     if (types.MESSAGE_RECEIVED) ctx.eventSource.on(types.MESSAGE_RECEIVED, onMessageReceived);
+    /* Порыв ветра на отправку: листва летит, снег и дождь забирают вбок. */
+    if (types.MESSAGE_SENT) {
+        ctx.eventSource.on(types.MESSAGE_SENT, () => {
+            if (settings.enabled && settings.interactive) engine.burst('send');
+        });
+    }
 }
 
 /* Scene Panel умеет менять состояние и без события (ползунки, день, погода),
@@ -557,6 +611,8 @@ async function boot() {
     engine.setLite(settings.lite);
     engine.setLook(settings.look);
     engine.setDebug(settings.debug);
+    engine.setParallax(settings.parallax);
+    engine.setDayCycle(settings.dayCycle);
 
     const host = await waitForHost();
     ui.mountPanel(host);
@@ -565,6 +621,7 @@ async function boot() {
     bindCommands();
 
     applyScene(settings.scene, { save: false });
+    syncHour();
     syncFromPanel(true);
     startPanelWatch();
     ui.refresh();

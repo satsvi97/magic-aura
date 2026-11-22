@@ -13,6 +13,10 @@ import './effects/magic.js';
 import './effects/ash.js';
 import './effects/rays.js';
 import './effects/branches.js';
+import './effects/aurora.js';
+import './effects/celestial.js';
+import './effects/crows.js';
+import './effects/dustlight.js';
 
 /* ---------- небо ---------- */
 
@@ -35,6 +39,7 @@ registerSky('sakura', 'radial-gradient(120% 95% at 50% 84%, #4c2442 0%, #2a1730 
 registerSky('arcane', 'radial-gradient(125% 100% at 50% 28%, #2f1c5c 0%, #180f30 46%, #080610 100%)');
 registerSky('sunny', 'radial-gradient(120% 100% at 50% 2%, #5c432a 0%, #33241a 44%, #120d10 100%)');
 registerSky('birthday', 'radial-gradient(90% 75% at 50% 80%, #6a3a20 0%, #341c30 46%, #0e0812 100%)');
+registerSky('aurora', 'linear-gradient(180deg, #0c1a2e 0%, #122036 38%, #0a0d18 78%, #06080f 100%)');
 registerSky('candlelight', 'radial-gradient(circle 260px at 50% 74%, rgba(255,210,140,.85) 0 10%, rgba(255,186,110,.3) 34%, rgba(255,170,96,.08) 62%, transparent 82%)');
 
 /* ---------- сцены ---------- */
@@ -44,10 +49,12 @@ export const SCENES = [
         id: 'night',
         name: 'Ночная тишина',
         icon: '🌙',
-        sky: ['night', { id: 'moon', opacity: 0.9 }],
+        sky: ['night', { id: 'moon', opacity: 0.35 }],
         grade: { shade: 0.9, tint: 'rgba(44,34,86,.16)' },
         layers: [
+            { effect: 'celestial', params: { body: 'moon', hour: 22 } },
             { effect: 'stars', params: { count: 180 } },
+            { effect: 'meteors', params: { every: [16, 38] }, intensity: 0.7 },
             { effect: 'motes', params: { color: '201,185,255', size: 0.8 }, intensity: 0.7 },
         ],
         keywords: ['ночь', 'ночн', 'полночь', 'луна', 'звёзд', 'night', 'moon', 'midnight', 'star'],
@@ -109,6 +116,7 @@ export const SCENES = [
         grade: { shade: 0.95, tint: 'rgba(74,26,12,.12)' },
         layers: [
             { effect: 'embers', params: { color: '255,186,120', size: 1.1 } },
+            { effect: 'dustlight', params: { color: '255,214,160', size: 0.75 } },
             { effect: 'motes', params: { color: '255,214,160', size: 0.7 }, intensity: 0.5 },
         ],
         keywords: ['костёр', 'костер', 'огонь', 'пламя', 'поход', 'fire', 'campfire', 'flame', 'bonfire'],
@@ -121,6 +129,7 @@ export const SCENES = [
         grade: { shade: 1.05, tint: 'rgba(86,38,16,.14)' },
         layers: [
             { effect: 'embers', params: { color: '255,170,90', size: 0.55 }, intensity: 0.55 },
+            { effect: 'dustlight', params: { color: '255,208,150', size: 0.8, reach: 210 } },
             { effect: 'motes', params: { color: '255,206,150', size: 0.6 }, intensity: 0.6 },
         ],
         keywords: [
@@ -158,9 +167,10 @@ export const SCENES = [
         id: 'starfall',
         name: 'Звездопад',
         icon: '☄️',
-        sky: ['night', { id: 'moon', opacity: 0.7 }],
+        sky: ['night', { id: 'moon', opacity: 0.6 }],
         grade: { shade: 1.05, tint: 'rgba(40,32,80,.18)' },
         layers: [
+            { effect: 'celestial', params: { body: 'moon', hour: 21 } },
             { effect: 'stars', params: { count: 240 } },
             { effect: 'meteors', params: { every: [1.6, 4.2] } },
         ],
@@ -174,7 +184,9 @@ export const SCENES = [
         grade: { shade: 1.1, tint: 'rgba(10,40,32,.22)' },
         layers: [
             { effect: 'fireflies', params: { count: 28 } },
+            { effect: 'crows', params: { alpha: 0.45, y: 0.2 } },
             { effect: 'mist', params: { color: '150,200,180' }, intensity: 0.6 },
+            { effect: 'dustlight', params: { color: '190,255,210', size: 0.7 } },
             { effect: 'motes', params: { color: '190,255,210', size: 0.6 }, intensity: 0.6 },
         ],
         keywords: ['лес', 'чаща', 'поляна', 'эльф', 'фей', 'светляч', 'дерев', 'forest', 'woods', 'fairy', 'firefl'],
@@ -186,6 +198,7 @@ export const SCENES = [
         sky: 'desert',
         grade: { shade: 0.95, tint: 'rgba(120,74,26,.14)' },
         layers: [
+            { effect: 'celestial', params: { body: 'sun', hour: 15, y: 0.28 } },
             { effect: 'dunes', params: { horizon: 0.74, far: '96,64,36', near: '38,24,19' } },
             { effect: 'sand', params: { color: '234,202,152' } },
             { effect: 'shimmer', params: { color: '255,206,150' }, intensity: 0.8 },
@@ -197,9 +210,10 @@ export const SCENES = [
         id: 'desert_night',
         name: 'Пустыня ночью',
         icon: '🌵',
-        sky: ['desert-night', { id: 'moon', opacity: 0.75 }],
+        sky: ['desert-night', { id: 'moon', opacity: 0.4 }],
         grade: { shade: 1.05, tint: 'rgba(58,44,84,.16)' },
         layers: [
+            { effect: 'celestial', params: { body: 'moon', hour: 23 } },
             { effect: 'dunes', params: { horizon: 0.72, far: '60,52,62', near: '24,20,28' } },
             { effect: 'stars', params: { count: 170 } },
             { effect: 'sand', params: { color: '198,190,214', wind: 0.6 }, intensity: 0.55 },
@@ -217,6 +231,7 @@ export const SCENES = [
         grade: { shade: 1, tint: 'rgba(92,42,16,.16)' },
         layers: [
             { effect: 'branches', params: { color: '10,7,9', alpha: 0.8, depth: 6, scale: 0.7, sides: ['left', 'right'] } },
+            { effect: 'crows', params: { alpha: 0.5, y: 0.18 } },
             { effect: 'leaves', params: { shape: 'leaf', size: 1, count: 34 } },
             { effect: 'mist', params: { color: '164,124,96' }, intensity: 0.45 },
             { effect: 'motes', params: { color: '255,196,130', size: 0.6 }, intensity: 0.45 },
@@ -230,7 +245,9 @@ export const SCENES = [
         sky: 'garden',
         grade: { shade: 1, tint: 'rgba(18,60,36,.16)' },
         layers: [
+            { effect: 'crows', params: { alpha: 0.35, y: 0.22 } },
             { effect: 'leaves', params: { shape: 'leaf', size: 1, count: 28, colors: ['124,186,104', '92,158,82', '150,200,116', '72,132,74'] } },
+            { effect: 'dustlight', params: { color: '214,255,190', size: 0.7 } },
             { effect: 'motes', params: { color: '190,240,180', size: 0.6 }, intensity: 0.5 },
         ],
         keywords: ['сад', 'зелён', 'зелен', 'весн', 'garden', 'green leaves', 'spring'],
@@ -258,6 +275,7 @@ export const SCENES = [
         layers: [
             { effect: 'trails', params: { count: 20, tail: 34 } },
             { effect: 'spirits', params: { count: 30 }, intensity: 0.8 },
+            { effect: 'dustlight', params: { color: '214,196,255', size: 0.8, reach: 240 } },
             { effect: 'motes', params: { color: '210,196,255', size: 0.6 }, intensity: 0.45 },
         ],
         keywords: ['магия', 'магическ', 'чары', 'заклят', 'заклинани', 'колдов', 'arcane', 'magic', 'spell'],
@@ -279,10 +297,12 @@ export const SCENES = [
         name: 'Солнечный день',
         icon: '☀️',
         sky: 'sunny',
-        grade: { shade: 0.85, tint: 'rgba(150,96,36,.16)' },
+        grade: { shade: 0.78, tint: 'rgba(168,106,40,.2)' },
         layers: [
+            { effect: 'celestial', params: { body: 'sun', hour: 11, y: 0.3 } },
             { effect: 'rays', params: { color: '255,214,150', count: 6 } },
-            { effect: 'motes', params: { color: '255,224,168', size: 0.9 }, intensity: 1 },
+            { effect: 'dustlight', params: { color: '255,226,170', size: 0.9 } },
+            { effect: 'motes', params: { color: '255,224,168', size: 0.9 }, intensity: 0.7 },
             { effect: 'shimmer', params: { color: '255,214,150' }, intensity: 0.5 },
             { effect: 'groundm', params: { color: '255,220,170', level: 0.16 }, intensity: 0.35 },
         ],
@@ -315,6 +335,25 @@ export const SCENES = [
         keywords: ['метел', 'метёл', 'вьюга', 'пурга', 'blizzard', 'snowstorm'],
     },
     {
+        id: 'aurora',
+        name: 'Северное сияние',
+        icon: '🌌',
+        sky: ['aurora', { id: 'moon', opacity: 0.3 }],
+        grade: { shade: 1, tint: 'rgba(26,52,74,.18)' },
+        layers: [
+            { effect: 'aurora', params: { green: '92,255,182', violet: '164,124,255' } },
+            { effect: 'celestial', params: { body: 'moon', hour: 2.5 } },
+            { effect: 'stars', params: { count: 210 } },
+            { effect: 'snow', params: { size: 0.7, wind: 0.12 }, intensity: 0.35 },
+            { effect: 'mist', params: { color: '150,200,220' }, intensity: 0.5 },
+            { effect: 'dustlight', params: { color: '190,255,235', size: 0.7 } },
+        ],
+        keywords: [
+            'северное сияние', 'сияние', 'аврора', 'полярн', 'полярное', 'aurora', 'northern lights',
+            'polar lights', 'norrsken',
+        ],
+    },
+    {
         id: 'birthday',
         name: 'Свечи и торт',
         icon: '🎂',
@@ -322,6 +361,7 @@ export const SCENES = [
         grade: { shade: 1.1, tint: 'rgba(96,44,18,.16)' },
         layers: [
             { effect: 'embers', params: { color: '255,198,128', size: 0.7 }, intensity: 0.95 },
+            { effect: 'dustlight', params: { color: '255,214,158', size: 0.9, reach: 240 } },
             { effect: 'motes', params: { color: '255,216,164', size: 0.8 }, intensity: 1 },
             { effect: 'shimmer', params: { color: '255,206,150' }, intensity: 0.6 },
         ],

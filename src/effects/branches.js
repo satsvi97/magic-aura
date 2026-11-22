@@ -97,7 +97,9 @@ registerEffect({
                 build();
             },
             draw(ctx) {
-                if (layer) ctx.drawImage(layer, 0, 0, w, h);
+                if (!layer) return;
+                const shift = env.shift ? env.shift(0.55) : { x: 0, y: 0 };
+                ctx.drawImage(layer, shift.x, shift.y, w, h);
             },
         };
     },
