@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.2 — calmer fire, wetter glass, memories
+
+- **Campfire:** much softer and darker — deeper red-orange, lower light, smaller core, lower on the
+  screen. It no longer washes out the text when particles are above the chat.
+- **Intimate:** condensation drops are visible now — bigger, brighter highlights, longer trails, more
+  of them moving.
+- **Horror:** cold gothic blue added to the sky and grade, scene darker, the cold light from above is
+  bluer; the tiny red dots are a bit brighter.
+- **New scene «Воспоминания» (Memory):** faded sepia light, soft film light leaks, slow dust and
+  warm motes — for flashbacks and nostalgic moments.
+
 ## 0.7.1 — finishing touches by the fire
 
 - **Fireplace:** the logs are gone — only the fire light, the flickering core and embers remain.

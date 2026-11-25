@@ -27,15 +27,15 @@ registerEffect({
         }
 
         function make(init) {
-            const r = rnd(1.1, 4.2);
+            const r = rnd(1.4, 5.2);
             return {
                 x: rnd(0, w),
                 y: init ? rnd(0, h) : rnd(-h * 0.2, 0),
                 r,
                 ry: r * rnd(1.1, 1.8),
-                v: rnd(0, 9), // большинство капель почти стоят
-                trail: rnd(0, 18),
-                o: rnd(0.05, 0.16),
+                v: rnd(0, 15), // часть капель почти стоит, часть медленно ползёт
+                trail: rnd(4, 30),
+                o: rnd(0.1, 0.26),
                 ph: rnd(0, Math.PI * 2),
             };
         }
@@ -87,7 +87,7 @@ registerEffect({
                     /* блик */
                     ctx.fillStyle = `rgba(255,255,255,${a * 0.55})`;
                     ctx.beginPath();
-                    ctx.arc(d.x - d.r * 0.3, d.y - d.ry * 0.35, Math.max(0.5, d.r * 0.22), 0, Math.PI * 2);
+                    ctx.arc(d.x - d.r * 0.3, d.y - d.ry * 0.35, Math.max(0.6, d.r * 0.3), 0, Math.PI * 2);
                     ctx.fill();
                 }
             },

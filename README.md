@@ -33,7 +33,7 @@ Requires SillyTavern **1.12+**. No API, no external requests, nothing is written
 | `rainy` | Grey Rain | steady rain, overcast sky |
 | `snow` | Snowfall | snowflakes, cold haze |
 | `fog` | Foggy Morning | mist bands, dust |
-| `campfire` | Campfire | embers, warm grade, small branches lit from below |
+| `campfire` | Campfire | deep red-orange fire light, embers, small branches lit from below |
 | `fireplace` | Fireplace | flickering fire light, embers |
 | `candle` | Candlelit Room | small point light in the corner, fine sparks |
 | `deep` | Deep Water | bubbles, plankton, blue grade |
@@ -46,7 +46,7 @@ Requires SillyTavern **1.12+**. No API, no external requests, nothing is written
 | `garden` | Green Garden | green leaves, pollen dust |
 | `sakura` | Sakura | petals, pink haze |
 | `romance` | Romance | soft bokeh, rising hearts, warm point light |
-| `passion` | Intimate | deep red bokeh, dark petals, glass condensation, slow pulse |
+| `passion` | Intimate | deep red bokeh, dark petals, visible glass condensation, slow pulse |
 | `arcane` | Magic | particles with tails, swirling sparks |
 | `cloudy` | Overcast | grey sky, drifting mist |
 | `sunny` | Sunny Day | warm light shafts, floating pollen |
@@ -54,7 +54,8 @@ Requires SillyTavern **1.12+**. No API, no external requests, nothing is written
 | `blizzard` | Blizzard | sideways snow, dense low mist |
 | `aurora` | Northern Lights | procedural aurora curtains, moon, light snow, dust |
 | `birthday` | Candles & Cake | candle halo, golden sparks, dust that follows the cursor |
-| `horror` | Horror | cold rim-lit branches, crawling fog, ash, crows, tiny red eyes |
+| `memory` | Memory | faded sepia light, film light leaks, slow dust |
+| `horror` | Horror | cold blue gothic grade, rim-lit branches, crawling fog, ash, crows, tiny red eyes |
 
 ![Desert](preview/preview-desert.jpg)
 ![Sakura](preview/preview-sakura.jpg)
