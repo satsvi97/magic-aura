@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.3 — fire kept where fire belongs
+
+- **Campfire and Fireplace no longer wash out the screen:** the glow is much smaller, moved to the
+  very bottom of the frame and dimmed (the “above chat” layer stays readable).
+- The fire skies themselves are darker and deeper — no more orange haze over the whole UI.
+
 ## 0.7.2 — calmer fire, wetter glass, memories
 
 - **Campfire:** much softer and darker — deeper red-orange, lower light, smaller core, lower on the

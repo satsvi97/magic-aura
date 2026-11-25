@@ -32,7 +32,7 @@ registerSky('moon', 'radial-gradient(circle 118px at 68% 13%, rgba(255,253,244,.
 registerSky('storm', 'linear-gradient(180deg, #2a2b40 0%, #171826 46%, #0a0a12 100%)');
 registerSky('snow', 'linear-gradient(180deg, #2c3552 0%, #1a2134 48%, #0b0e16 100%)');
 registerSky('dawn', 'linear-gradient(180deg, #3b3049 0%, #221b30 42%, #0e0a14 100%)');
-registerSky('warm', 'radial-gradient(110% 85% at 50% 74%, #63422a 0%, #2d1a20 48%, #0f0812 100%)');
+registerSky('warm', 'radial-gradient(88% 62% at 50% 88%, #43251a 0%, #20121a 46%, #0b0710 100%)');
 registerSky('candle', 'radial-gradient(95% 70% at 50% 76%, #60381c 0%, #2e1720 44%, #0d0710 100%)');
 registerSky('deep', 'radial-gradient(130% 100% at 50% 0%, #1b5e77 0%, #0d2f45 42%, #05121e 100%)');
 registerSky('neon', 'radial-gradient(130% 95% at 30% 74%, #4f1d74 0%, #251143 44%, #0d0818 100%)');
@@ -47,7 +47,7 @@ registerSky('arcane', 'radial-gradient(125% 100% at 50% 28%, #2f1c5c 0%, #180f30
 registerSky('sunny', 'radial-gradient(120% 100% at 50% 2%, #5c432a 0%, #33241a 44%, #120d10 100%)');
 registerSky('birthday', 'radial-gradient(90% 75% at 50% 80%, #6a3a20 0%, #341c30 46%, #0e0812 100%)');
 registerSky('aurora', 'linear-gradient(180deg, #0c1a2e 0%, #122036 38%, #0a0d18 78%, #06080f 100%)');
-registerSky('fireplace', 'radial-gradient(82% 68% at 50% 90%, #6b3418 0%, #2a1414 48%, #0c0709 100%)');
+registerSky('fireplace', 'radial-gradient(74% 52% at 50% 96%, #4a2412 0%, #1c0f13 46%, #090508 100%)');
 registerSky('romance', 'radial-gradient(118% 92% at 50% 84%, #5b2a3e 0%, #2a1630 46%, #100a14 100%)');
 registerSky('passion', 'radial-gradient(96% 82% at 50% 88%, #6d1424 0%, #2b0d18 48%, #0b050a 100%)');
 registerSky('memory', 'radial-gradient(120% 100% at 50% 22%, #6b5a3e 0%, #2e2618 46%, #0f0c0a 100%)');
@@ -125,14 +125,14 @@ export const SCENES = [
         name: 'Костёр',
         icon: '🏕',
         sky: 'warm',
-        grade: { shade: 1.12, tint: 'rgba(92,26,12,.2)' },
+        grade: { shade: 1.2, tint: 'rgba(92,26,12,.2)' },
         layers: [
             { effect: 'branches', params: { color: '8,5,7', alpha: 0.85, depth: 6, scale: 0.75, sides: ['left', 'right'], rim: '255,124,64' } },
-            { effect: 'pointlight', params: { color: '255,118,54', y: 0.92, size: 1.1, alpha: 0.4, flicker: 0.55, speed: 1.1 } },
-            { effect: 'pointlight', params: { color: '255,176,96', y: 0.92, size: 0.24, alpha: 0.55, flicker: 0.75, speed: 2.2 } },
-            { effect: 'embers', params: { color: '255,168,104', size: 0.9 }, intensity: 0.85 },
-            { effect: 'dustlight', params: { color: '255,196,140', size: 0.6, reach: 180 } },
-            { effect: 'motes', params: { color: '255,196,140', size: 0.6 }, intensity: 0.4 },
+            { effect: 'pointlight', params: { color: '255,118,54', y: 0.95, size: 0.42, alpha: 0.34, flicker: 0.55, speed: 1.1 } },
+            { effect: 'pointlight', params: { color: '255,176,96', y: 0.945, size: 0.16, alpha: 0.52, flicker: 0.75, speed: 2.2 } },
+            { effect: 'embers', params: { color: '255,168,104', size: 0.9 }, intensity: 0.8 },
+            { effect: 'dustlight', params: { color: '255,196,140', size: 0.5, reach: 150 } },
+            { effect: 'motes', params: { color: '255,196,140', size: 0.55 }, intensity: 0.3 },
         ],
         keywords: ['костёр', 'костер', 'огонь', 'пламя', 'поход', 'fire', 'campfire', 'flame', 'bonfire'],
     },
@@ -141,13 +141,13 @@ export const SCENES = [
         name: 'Камин',
         icon: '🔥',
         sky: 'fireplace',
-        grade: { shade: 1, tint: 'rgba(96,42,16,.16)' },
+        grade: { shade: 1.18, tint: 'rgba(96,42,16,.18)' },
         layers: [
-            { effect: 'pointlight', params: { color: '255,146,72', y: 0.86, size: 1.4, alpha: 0.6, flicker: 0.5, speed: 1.25 } },
-            { effect: 'pointlight', params: { color: '255,220,156', y: 0.845, size: 0.3, alpha: 0.85, flicker: 0.7, speed: 2.1 } },
-            { effect: 'embers', params: { color: '255,170,96', size: 1 } },
-            { effect: 'dustlight', params: { color: '255,198,140', size: 0.85, reach: 220 } },
-            { effect: 'motes', params: { color: '255,200,140', size: 0.6 }, intensity: 0.55 },
+            { effect: 'pointlight', params: { color: '255,132,64', y: 0.95, size: 0.5, alpha: 0.32, flicker: 0.5, speed: 1.25 } },
+            { effect: 'pointlight', params: { color: '255,196,132', y: 0.945, size: 0.18, alpha: 0.48, flicker: 0.7, speed: 2.1 } },
+            { effect: 'embers', params: { color: '255,170,96', size: 0.9 }, intensity: 0.85 },
+            { effect: 'dustlight', params: { color: '255,198,140', size: 0.55, reach: 170 } },
+            { effect: 'motes', params: { color: '255,200,140', size: 0.55 }, intensity: 0.35 },
         ],
         keywords: ['камин', 'очаг', 'fireplace', 'hearth', 'fire place'],
     },
