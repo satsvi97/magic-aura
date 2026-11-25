@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.1 — finishing touches by the fire
+
+- **Fireplace:** the logs are gone — only the fire light, the flickering core and embers remain.
+- **Candlelit Room:** the point light is smaller (it is a candle, not a bonfire) and moved to the
+  lower left corner.
+- **Romance:** the sakura petals are replaced with small glowing hearts rising slowly, plus fine dust —
+  no season-specific look.
+- **Intimate** (renamed from “Crimson Evening”): added very faint condensation droplets on the glass;
+  the kind of steamed-up window from old films. Kept deliberately subtle so it never competes with text.
+- **Horror:** the eyes are now two tiny dark-red dots that appear in random places, and the whole
+  scene is a notch darker.
+
 ## 0.7.0 — quality profiles, fireplace, romance and horror
 
 **Performance**

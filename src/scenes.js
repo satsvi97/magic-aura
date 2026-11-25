@@ -21,7 +21,8 @@ import './effects/bokeh.js';
 import './effects/pulse.js';
 import './effects/eyes.js';
 import './effects/pointlight.js';
-import './effects/logs.js';
+import './effects/hearts.js';
+import './effects/glassdrops.js';
 
 /* ---------- небо ---------- */
 
@@ -141,7 +142,6 @@ export const SCENES = [
         grade: { shade: 1, tint: 'rgba(96,42,16,.16)' },
         layers: [
             { effect: 'pointlight', params: { color: '255,146,72', y: 0.86, size: 1.4, alpha: 0.6, flicker: 0.5, speed: 1.25 } },
-            { effect: 'logs', params: { level: 0.84, width: 0.3 } },
             { effect: 'pointlight', params: { color: '255,220,156', y: 0.845, size: 0.3, alpha: 0.85, flicker: 0.7, speed: 2.1 } },
             { effect: 'embers', params: { color: '255,170,96', size: 1 } },
             { effect: 'dustlight', params: { color: '255,198,140', size: 0.85, reach: 220 } },
@@ -156,7 +156,7 @@ export const SCENES = [
         sky: 'candle',
         grade: { shade: 1.05, tint: 'rgba(86,38,16,.14)' },
         layers: [
-            { effect: 'pointlight', params: { color: '255,184,116', y: 0.76, size: 0.44, alpha: 0.58, flicker: 0.16, speed: 0.75 } },
+            { effect: 'pointlight', params: { color: '255,184,116', x: 0.16, y: 0.8, size: 0.24, alpha: 0.55, flicker: 0.16, speed: 0.75 } },
             { effect: 'embers', params: { color: '255,170,90', size: 0.55 }, intensity: 0.55 },
             { effect: 'dustlight', params: { color: '255,208,150', size: 0.8, reach: 210 } },
             { effect: 'motes', params: { color: '255,206,150', size: 0.6 }, intensity: 0.6 },
@@ -404,7 +404,8 @@ export const SCENES = [
         layers: [
             { effect: 'bokeh', params: { colors: ['255,196,206', '255,168,186', '255,214,196'], count: 18, size: 1.1 } },
             { effect: 'pointlight', params: { color: '255,186,150', y: 0.82, size: 0.62, alpha: 0.3, flicker: 0.14, speed: 0.6 } },
-            { effect: 'leaves', params: { shape: 'petal', size: 0.85, count: 16 } },
+            { effect: 'hearts', params: { color: '255,158,184', count: 20 } },
+            { effect: 'motes', params: { color: '255,206,214', size: 0.55 }, intensity: 0.5 },
             { effect: 'dustlight', params: { color: '255,206,206', size: 0.7 } },
             { effect: 'mist', params: { color: '236,186,204' }, intensity: 0.35 },
         ],
@@ -415,13 +416,14 @@ export const SCENES = [
     },
     {
         id: 'passion',
-        name: 'Красный вечер',
+        name: 'Интим',
         icon: '🌹',
         sky: 'passion',
         grade: { shade: 1.12, tint: 'rgba(120,20,34,.2)' },
         layers: [
             { effect: 'pulse', params: { color: '255,70,90', alpha: 0.1, rate: 0.13, y: 0.78, size: 1.4 } },
             { effect: 'bokeh', params: { colors: ['255,110,120', '220,60,80', '255,150,140'], count: 14, size: 1.15 } },
+            { effect: 'glassdrops', params: { color: '236,206,214', alpha: 0.55, count: 30 } },
             { effect: 'leaves', params: { shape: 'petal', size: 0.95, count: 14, colors: ['196,60,80', '160,40,60', '230,90,110'] } },
             { effect: 'embers', params: { color: '255,110,90', size: 0.6 }, intensity: 0.4 },
         ],
@@ -435,16 +437,16 @@ export const SCENES = [
         name: 'Хоррор',
         icon: '🕯',
         sky: 'horror',
-        grade: { shade: 1.35, tint: 'rgba(10,22,18,.22)' },
+        grade: { shade: 1.45, tint: 'rgba(6,14,12,.26)' },
         layers: [
-            { effect: 'pulse', params: { color: '180,20,30', alpha: 0.09, rate: 0.09, y: 0.6, size: 1.6 } },
+            { effect: 'pulse', params: { color: '180,20,30', alpha: 0.07, rate: 0.09, y: 0.6, size: 1.6 } },
             { effect: 'mist', params: { color: '120,140,130' }, intensity: 0.8 },
             { effect: 'groundm', params: { color: '96,110,102', level: 0.3 }, intensity: 0.9 },
-            { effect: 'pointlight', params: { color: '150,192,180', x: 0.5, y: 0.08, size: 1.5, alpha: 0.18, flicker: 0.12, speed: 0.4 } },
+            { effect: 'pointlight', params: { color: '150,192,180', x: 0.5, y: 0.08, size: 1.5, alpha: 0.16, flicker: 0.12, speed: 0.4 } },
             { effect: 'branches', params: { color: '4,6,6', alpha: 0.7, depth: 6, scale: 0.85, sides: ['left', 'right'], rim: '150,178,168' } },
             { effect: 'ash', params: { color: '170,175,165' } },
             { effect: 'crows', params: { alpha: 0.6, y: 0.2 } },
-            { effect: 'eyes', params: { alpha: 0.9, every: [4, 10] } },
+            { effect: 'eyes', params: { color: '176,34,38', alpha: 0.82, every: [8, 20] } },
         ],
         keywords: [
             'хоррор', 'ужас', 'страшн', 'кошмар', 'жутк', 'зловещ', 'мрачн',
