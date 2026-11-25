@@ -6,14 +6,24 @@
  */
 import { registerEffect, rnd, clamp } from '../engine.js';
 
-/** Одна ветка: линия + рекурсивные побеги. */
-function branch(g, x, y, angle, len, width, depth, color, alpha) {
+/** Одна ветка: линия + рекурсивные побеги. rim — тёплый подсвет снизу (огонь). */
+function branch(g, x, y, angle, len, width, depth, color, alpha, rim) {
     const x2 = x + Math.cos(angle) * len;
     const y2 = y + Math.sin(angle) * len;
 
+    g.lineCap = 'round';
+    if (rim) {
+        /* тонкая тёплая кромка чуть ниже силуэта: ветка читается на тёмном небе */
+        g.strokeStyle = `rgba(${rim},${alpha * 0.3})`;
+        g.lineWidth = Math.max(0.8, width + 1.1);
+        g.beginPath();
+        g.moveTo(x, y + 1.2);
+        g.lineTo(x2, y2 + 1.2);
+        g.stroke();
+    }
+
     g.strokeStyle = `rgba(${color},${alpha})`;
     g.lineWidth = Math.max(0.35, width);
-    g.lineCap = 'round';
     g.beginPath();
     g.moveTo(x, y);
     g.lineTo(x2, y2);
@@ -37,6 +47,7 @@ function branch(g, x, y, angle, len, width, depth, color, alpha) {
             depth - 1,
             color,
             childAlpha,
+            rim,
         );
     }
 }
@@ -56,6 +67,7 @@ registerEffect({
         const depth = Math.round(p.depth ?? 6);
         const scale = p.scale ?? 1;
         const sides = Array.isArray(p.sides) ? p.sides : ['left', 'right'];
+        const rim = p.rim || '';
         let layer = null;
 
         function build() {
@@ -72,17 +84,17 @@ registerEffect({
             const width = Math.max(1.5, Math.min(w, h) * 0.005) * scale;
 
             if (sides.includes('left')) {
-                branch(g, -w * 0.03, -h * 0.04, rnd(0.55, 0.8), len * 1.15, width, depth, color, alpha);
-                branch(g, w * 0.02, -h * 0.05, rnd(0.95, 1.2), len * 0.85, width * 0.75, depth - 1, color, alpha);
-                branch(g, w * 0.11, -h * 0.03, rnd(1.2, 1.45), len * 0.55, width * 0.55, depth - 2, color, alpha * 0.92);
+                branch(g, -w * 0.03, -h * 0.04, rnd(0.55, 0.8), len * 1.15, width, depth, color, alpha, rim);
+                branch(g, w * 0.02, -h * 0.05, rnd(0.95, 1.2), len * 0.85, width * 0.75, depth - 1, color, alpha, rim);
+                branch(g, w * 0.11, -h * 0.03, rnd(1.2, 1.45), len * 0.55, width * 0.55, depth - 2, color, alpha * 0.92, rim);
             }
             if (sides.includes('right')) {
-                branch(g, w * 1.03, -h * 0.04, Math.PI - rnd(0.55, 0.8), len * 1.15, width, depth, color, alpha);
-                branch(g, w * 0.98, -h * 0.05, Math.PI - rnd(0.95, 1.2), len * 0.85, width * 0.75, depth - 1, color, alpha);
-                branch(g, w * 0.89, -h * 0.03, Math.PI - rnd(1.2, 1.45), len * 0.55, width * 0.55, depth - 2, color, alpha * 0.92);
+                branch(g, w * 1.03, -h * 0.04, Math.PI - rnd(0.55, 0.8), len * 1.15, width, depth, color, alpha, rim);
+                branch(g, w * 0.98, -h * 0.05, Math.PI - rnd(0.95, 1.2), len * 0.85, width * 0.75, depth - 1, color, alpha, rim);
+                branch(g, w * 0.89, -h * 0.03, Math.PI - rnd(1.2, 1.45), len * 0.55, width * 0.55, depth - 2, color, alpha * 0.92, rim);
             }
             if (sides.includes('top')) {
-                branch(g, w * rnd(0.3, 0.7), -h * 0.05, Math.PI / 2 + rnd(-0.3, 0.3), len * 0.8, width * 0.7, depth - 1, color, alpha * 0.9);
+                branch(g, w * rnd(0.3, 0.7), -h * 0.05, Math.PI / 2 + rnd(-0.3, 0.3), len * 0.8, width * 0.7, depth - 1, color, alpha * 0.9, rim);
             }
 
             layer = c;

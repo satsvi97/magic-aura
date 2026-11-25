@@ -17,6 +17,11 @@ import './effects/aurora.js';
 import './effects/celestial.js';
 import './effects/crows.js';
 import './effects/dustlight.js';
+import './effects/bokeh.js';
+import './effects/pulse.js';
+import './effects/eyes.js';
+import './effects/pointlight.js';
+import './effects/logs.js';
 
 /* ---------- небо ---------- */
 
@@ -40,6 +45,10 @@ registerSky('arcane', 'radial-gradient(125% 100% at 50% 28%, #2f1c5c 0%, #180f30
 registerSky('sunny', 'radial-gradient(120% 100% at 50% 2%, #5c432a 0%, #33241a 44%, #120d10 100%)');
 registerSky('birthday', 'radial-gradient(90% 75% at 50% 80%, #6a3a20 0%, #341c30 46%, #0e0812 100%)');
 registerSky('aurora', 'linear-gradient(180deg, #0c1a2e 0%, #122036 38%, #0a0d18 78%, #06080f 100%)');
+registerSky('fireplace', 'radial-gradient(82% 68% at 50% 90%, #6b3418 0%, #2a1414 48%, #0c0709 100%)');
+registerSky('romance', 'radial-gradient(118% 92% at 50% 84%, #5b2a3e 0%, #2a1630 46%, #100a14 100%)');
+registerSky('passion', 'radial-gradient(96% 82% at 50% 88%, #6d1424 0%, #2b0d18 48%, #0b050a 100%)');
+registerSky('horror', 'linear-gradient(180deg, #0b1012 0%, #090a0c 45%, #040406 100%)');
 registerSky('candlelight', 'radial-gradient(circle 260px at 50% 74%, rgba(255,210,140,.85) 0 10%, rgba(255,186,110,.3) 34%, rgba(255,170,96,.08) 62%, transparent 82%)');
 
 /* ---------- сцены ---------- */
@@ -115,11 +124,30 @@ export const SCENES = [
         sky: 'warm',
         grade: { shade: 0.95, tint: 'rgba(74,26,12,.12)' },
         layers: [
+            { effect: 'branches', params: { color: '10,7,9', alpha: 0.85, depth: 6, scale: 0.75, sides: ['left', 'right'], rim: '255,150,90' } },
+            { effect: 'pointlight', params: { color: '255,148,74', y: 0.86, size: 1.05, alpha: 0.72, flicker: 0.55, speed: 1.1 } },
+            { effect: 'pointlight', params: { color: '255,216,148', y: 0.865, size: 0.3, alpha: 0.78, flicker: 0.75, speed: 2.2 } },
             { effect: 'embers', params: { color: '255,186,120', size: 1.1 } },
             { effect: 'dustlight', params: { color: '255,214,160', size: 0.75 } },
             { effect: 'motes', params: { color: '255,214,160', size: 0.7 }, intensity: 0.5 },
         ],
         keywords: ['костёр', 'костер', 'огонь', 'пламя', 'поход', 'fire', 'campfire', 'flame', 'bonfire'],
+    },
+    {
+        id: 'fireplace',
+        name: 'Камин',
+        icon: '🔥',
+        sky: 'fireplace',
+        grade: { shade: 1, tint: 'rgba(96,42,16,.16)' },
+        layers: [
+            { effect: 'pointlight', params: { color: '255,146,72', y: 0.86, size: 1.4, alpha: 0.6, flicker: 0.5, speed: 1.25 } },
+            { effect: 'logs', params: { level: 0.84, width: 0.3 } },
+            { effect: 'pointlight', params: { color: '255,220,156', y: 0.845, size: 0.3, alpha: 0.85, flicker: 0.7, speed: 2.1 } },
+            { effect: 'embers', params: { color: '255,170,96', size: 1 } },
+            { effect: 'dustlight', params: { color: '255,198,140', size: 0.85, reach: 220 } },
+            { effect: 'motes', params: { color: '255,200,140', size: 0.6 }, intensity: 0.55 },
+        ],
+        keywords: ['камин', 'очаг', 'fireplace', 'hearth', 'fire place'],
     },
     {
         id: 'candle',
@@ -128,6 +156,7 @@ export const SCENES = [
         sky: 'candle',
         grade: { shade: 1.05, tint: 'rgba(86,38,16,.14)' },
         layers: [
+            { effect: 'pointlight', params: { color: '255,184,116', y: 0.76, size: 0.44, alpha: 0.58, flicker: 0.16, speed: 0.75 } },
             { effect: 'embers', params: { color: '255,170,90', size: 0.55 }, intensity: 0.55 },
             { effect: 'dustlight', params: { color: '255,208,150', size: 0.8, reach: 210 } },
             { effect: 'motes', params: { color: '255,206,150', size: 0.6 }, intensity: 0.6 },
@@ -365,6 +394,62 @@ export const SCENES = [
             { effect: 'shimmer', params: { color: '255,206,150' }, intensity: 0.6 },
         ],
         keywords: ['день рождени', 'днюх', 'торт', 'именин', 'birthday cake', 'birthday'],
+    },
+    {
+        id: 'romance',
+        name: 'Романтика',
+        icon: '💗',
+        sky: 'romance',
+        grade: { shade: 0.88, tint: 'rgba(140,60,86,.14)' },
+        layers: [
+            { effect: 'bokeh', params: { colors: ['255,196,206', '255,168,186', '255,214,196'], count: 18, size: 1.1 } },
+            { effect: 'pointlight', params: { color: '255,186,150', y: 0.82, size: 0.62, alpha: 0.3, flicker: 0.14, speed: 0.6 } },
+            { effect: 'leaves', params: { shape: 'petal', size: 0.85, count: 16 } },
+            { effect: 'dustlight', params: { color: '255,206,206', size: 0.7 } },
+            { effect: 'mist', params: { color: '236,186,204' }, intensity: 0.35 },
+        ],
+        keywords: [
+            'романтик', 'романтика', 'романтичн', 'свидан', 'влюблен', 'влюблён', 'любов',
+            'romance', 'romantic', 'date', 'love',
+        ],
+    },
+    {
+        id: 'passion',
+        name: 'Красный вечер',
+        icon: '🌹',
+        sky: 'passion',
+        grade: { shade: 1.12, tint: 'rgba(120,20,34,.2)' },
+        layers: [
+            { effect: 'pulse', params: { color: '255,70,90', alpha: 0.1, rate: 0.13, y: 0.78, size: 1.4 } },
+            { effect: 'bokeh', params: { colors: ['255,110,120', '220,60,80', '255,150,140'], count: 14, size: 1.15 } },
+            { effect: 'leaves', params: { shape: 'petal', size: 0.95, count: 14, colors: ['196,60,80', '160,40,60', '230,90,110'] } },
+            { effect: 'embers', params: { color: '255,110,90', size: 0.6 }, intensity: 0.4 },
+        ],
+        keywords: [
+            'страст', 'постел', 'постельн', 'интим', 'желани', 'соблазн', 'эрот',
+            'passion', 'intimate', 'bedroom', 'desire', 'eros',
+        ],
+    },
+    {
+        id: 'horror',
+        name: 'Хоррор',
+        icon: '🕯',
+        sky: 'horror',
+        grade: { shade: 1.35, tint: 'rgba(10,22,18,.22)' },
+        layers: [
+            { effect: 'pulse', params: { color: '180,20,30', alpha: 0.09, rate: 0.09, y: 0.6, size: 1.6 } },
+            { effect: 'mist', params: { color: '120,140,130' }, intensity: 0.8 },
+            { effect: 'groundm', params: { color: '96,110,102', level: 0.3 }, intensity: 0.9 },
+            { effect: 'pointlight', params: { color: '150,192,180', x: 0.5, y: 0.08, size: 1.5, alpha: 0.18, flicker: 0.12, speed: 0.4 } },
+            { effect: 'branches', params: { color: '4,6,6', alpha: 0.7, depth: 6, scale: 0.85, sides: ['left', 'right'], rim: '150,178,168' } },
+            { effect: 'ash', params: { color: '170,175,165' } },
+            { effect: 'crows', params: { alpha: 0.6, y: 0.2 } },
+            { effect: 'eyes', params: { alpha: 0.9, every: [4, 10] } },
+        ],
+        keywords: [
+            'хоррор', 'ужас', 'страшн', 'кошмар', 'жутк', 'зловещ', 'мрачн',
+            'horror', 'nightmare', 'creepy', 'scary', 'dread',
+        ],
     },
 ];
 

@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.7.0 — quality profiles, fireplace, romance and horror
+
+**Performance**
+- **Quality profiles:** `auto` / high / medium / low / **only background**. Auto measures the real
+  cost of a frame and steps down (or back up) by itself, so a weak Tauri webview or phone settles on
+  something smooth without the user touching anything.
+- `only background` draws exactly one frame and stops the loop — nearly free, just the sky and grade.
+- Profiles change canvas DPR, pixel budget, particle density and FPS together (60 → 45 → 30).
+
+**New scenes**
+- **Камин (Fireplace):** stacked logs, warm fire light with a flickering core, embers.
+- **Романтика (Romance):** soft bokeh, slow rose petals, warm point light, haze.
+- **Красный вечер (Passion):** deep burgundy, red bokeh, dark petals, slow heartbeat pulse.
+- **Хоррор (Horror):** cold rim-lit bare branches, crawling fog, falling ash, crows, red pulse and
+  pairs of eyes blinking in the dark.
+
+**New effects**
+- `pointlight` — soft-edged translucent light source that breathes like a candle, not a strobe.
+- `bokeh` — large out-of-focus light circles with parallax.
+- `pulse` — extremely slow warm/red glow for intimate and horror scenes.
+- `eyes` — rare blinking eyes at the edges of the dark.
+- `logs` — static fireplace logs with glowing cracks.
+
+**Updated existing scenes**
+- **Candlelit Room** now has a real point light — a soft warm source instead of just sparks.
+- **Campfire** got the same small top-corner branches as autumn/sakura, with a warm rim light from
+  the fire so they read against the night sky.
+
 ## 0.6.1 — quiet sky, lighter engine
 
 **Look**

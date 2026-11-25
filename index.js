@@ -27,6 +27,8 @@ const DEFAULTS = {
     parallax: true,
     interactive: true,
     dayCycle: true,
+    /* auto — движок сам подбирает профиль по стоимости кадра */
+    quality: 'auto',
     look: { density: 1, opacity: 0.9, speed: 1, size: 1, shade: 0.28, sky: 0.45 },
 };
 
@@ -153,7 +155,7 @@ function rememberChat() {
 
 const engine = new Engine();
 
-const VERSION = '0.6.1';
+const VERSION = '0.7.0';
 
 const ui = createUI({
     version: VERSION,
@@ -209,6 +211,9 @@ function afterChange(key) {
     if (key === 'dayCycle') {
         engine.setDayCycle(settings.dayCycle);
         syncHour();
+    }
+    if (key === 'quality') {
+        engine.setQuality(settings.quality);
     }
     if (key === 'perChat' && !settings.perChat) {
         const meta = chatMeta();
@@ -360,6 +365,8 @@ function apiState() {
         parallax: !!settings.parallax,
         interactive: !!settings.interactive,
         dayCycle: !!settings.dayCycle,
+        quality: settings.quality || 'auto',
+        qualityLevel: engine.profileName(),
         panel: Boolean(readPanelState(chatMeta())),
     };
 }
@@ -625,6 +632,7 @@ async function boot() {
     engine.setDebug(settings.debug);
     engine.setParallax(settings.parallax);
     engine.setDayCycle(settings.dayCycle);
+    engine.setQuality(settings.quality);
 
     const host = await waitForHost();
     ui.mountPanel(host);

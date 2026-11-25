@@ -77,6 +77,15 @@ export function createUI(api) {
                         <label class="atmos-check"><input type="checkbox" data-atmos="syncPanel"><span></span>Синхронизация со Scene Panel</label>
                         <div class="atmos-panel-src" data-atmos-src></div>
                         <label class="atmos-check"><input type="checkbox" data-atmos="lite"><span></span>Lite-режим</label>
+                        <label class="atmos-mini">Качество
+                            <select data-atmos="quality">
+                                <option value="auto">авто</option>
+                                <option value="high">высокое</option>
+                                <option value="medium">среднее</option>
+                                <option value="low">низкое</option>
+                                <option value="static">только фон</option>
+                            </select>
+                        </label>
                         <label class="atmos-check atmos-desktop-only"><input type="checkbox" data-atmos="parallax"><span></span>Параллакс от мыши</label>
                         <label class="atmos-check"><input type="checkbox" data-atmos="interactive"><span></span>Реакция на сообщения</label>
                         <label class="atmos-check"><input type="checkbox" data-atmos="dayCycle"><span></span>Сутки по часам сцены</label>
@@ -244,6 +253,8 @@ export function createUI(api) {
             if (src) src.textContent = api.panelNote ? api.panelNote() : '';
             const pos = p.querySelector('[data-atmos="fabPos"]');
             if (pos) pos.value = s.fabPos || 'right';
+            const q = p.querySelector('[data-atmos="quality"]');
+            if (q) q.value = s.quality || 'auto';
 
             p.querySelectorAll('[data-atmos-layer]').forEach((b) => {
                 b.classList.toggle('on', (s.layer || 'behind') === b.dataset.atmosLayer);

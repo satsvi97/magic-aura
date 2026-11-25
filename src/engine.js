@@ -15,6 +15,20 @@ const DPR_CAP = 1.5;
 /* Потолок пиксельного буфера: 4K-монитор не должен получать канву на 8 Мпикс. */
 const MAX_PIXELS = 3200000;
 
+/**
+ * Профили качества. «auto» сам спускается вниз, если кадры дорогие, и поднимается
+ * обратно, когда устройство справляется. Статичный профиль рисует один кадр и
+ * останавливает цикл — это режим «просто фон», почти бесплатный.
+ */
+export const PROFILES = {
+    high: { fps: 60, dprCap: 1.5, pixels: 3200000, density: 1 },
+    medium: { fps: 45, dprCap: 1.25, pixels: 2200000, density: 0.8 },
+    low: { fps: 30, dprCap: 1.0, pixels: 1600000, density: 0.55 },
+    static: { fps: 0, dprCap: 1.0, pixels: 1600000, density: 0.35 },
+};
+const QUALITY_ORDER = ['high', 'medium', 'low'];
+
+
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 /** rgba(...) с умноженной прозрачностью: нужно для тонировки сцены. */
@@ -135,6 +149,13 @@ export class Engine {
 
         this.look = { density: 1, opacity: 0.9, speed: 1, size: 1, shade: 0.28, sky: 0.45 };
         this.lite = false;
+        /* Профиль качества: auto подбирается по реальной стоимости кадра. */
+        this.quality = 'auto';
+        this.autoLevel = 1;
+        this.staticMode = false;
+        this._costSum = 0;
+        this._costN = 0;
+        this._levelAt = 0;
         this.layer = 'behind';
         this.reduced = prefersReducedMotion();
 
@@ -308,11 +329,15 @@ export class Engine {
         const de = document.documentElement;
         let w = Math.round(Math.max(vv?.width || 0, window.innerWidth || 0, de.clientWidth || 0, 360));
         let h = Math.round(Math.max(vv?.height || 0, window.innerHeight || 0, de.clientHeight || 0, 640));
-        const want = Math.min(window.devicePixelRatio || 1, this.coarse ? 1.25 : DPR_CAP);
+        const prof = this.profile();
+        const want = Math.min(
+            window.devicePixelRatio || 1,
+            this.coarse ? Math.min(prof.dprCap, 1.25) : prof.dprCap,
+        );
         /* Ограничиваем не только DPR, но и общий объём канвы: 4K при 1.5× —
            это 18 Мпикс, на слабом GPU это уже слайд-шоу. */
-        const fit = Math.sqrt(MAX_PIXELS / Math.max(1, w * h));
-        const dpr = this.lite ? 1 : Math.max(0.75, Math.min(want, fit));
+        const fit = Math.sqrt(prof.pixels / Math.max(1, w * h));
+        const dpr = this.lite ? Math.min(1, want) : Math.max(0.7, Math.min(want, fit));
 
         for (const el of [this.root, this.fx, document.getElementById('atmos-ui')]) {
             if (!el) continue;
@@ -435,9 +460,47 @@ export class Engine {
 
     setLite(on) {
         this.lite = !!on;
+        this._costSum = 0;
+        this._costN = 0;
         this.resize();
         this.applyLook();
         if (this.scene) this.rebuild();
+    }
+
+    /** Имя активного профиля: у auto — реально выбранный уровень. */
+    profileName() {
+        if (this.quality === 'auto') return QUALITY_ORDER[this.autoLevel] || 'medium';
+        return this.quality;
+    }
+
+    profile() {
+        return PROFILES[this.profileName()] || PROFILES.medium;
+    }
+
+    /** Профиль качества: auto / high / medium / low / static. */
+    setQuality(q) {
+        const next = q === 'static' ? 'static' : q === 'auto' || !QUALITY_ORDER.includes(q) ? 'auto' : q;
+        this.quality = next;
+        if (next === 'auto') this.autoLevel = 1;
+        this._levelAt = performance.now();
+        this.staticMode = this.profileName() === 'static';
+        this._costSum = 0;
+        this._costN = 0;
+        this.resize();
+        this.applyLook();
+        if (this.scene) this.rebuild();
+        if (this.scene) this.resume();
+    }
+
+    /** Лимит кадров: профиль, затем Lite и тач-экран его только ужесточают. */
+    _fpsCap() {
+        let cap = this.profile().fps || 60;
+        if (this.lite) cap = Math.min(cap, 30);
+        if (this.coarse) cap = Math.min(cap, 40);
+        if (this.reduced || (typeof document.hasFocus === 'function' && !document.hasFocus())) {
+            cap = Math.min(cap, 20);
+        }
+        return cap;
     }
 
     /* ---------- параллакс, сутки, интерактив ---------- */
@@ -699,12 +762,14 @@ export class Engine {
             if (!def) continue;
             /* при reduce-motion оставляем небо и грейд, но убираем движение */
             if (reduced && def.motion !== false) continue;
+            /* «только фон»: один статичный кадр, движущиеся эффекты не нужны */
+            if (this.staticMode && def.motion !== false) continue;
 
             const env = {
                 w: this.w,
                 h: this.h,
                 dpr: this.dpr,
-                density: this.look.density,
+                density: this.look.density * (this.profile().density ?? 1),
                 intensity: layer.intensity ?? 1,
                 /* на тач-экранах бюджеты те же, что в Lite: разница в плотности
                    там не видна, а каждая лишняя частица — это кадр, который
@@ -788,17 +853,7 @@ export class Engine {
         if (this.paused) return;
         if (!this.ctx) return;
 
-        /* Свой лимит кадров: на 144 Гц мониторе и в неактивном окне незачем
-           рисовать 200 раз в секунду. Lite — 30, обычный — 60, окно без фокуса
-           и reduce-motion — 30. Экономия и батареи, и GPU. */
-        let cap = this.lite ? 30 : 60;
-        /* Тач-экраны: 40 кадров хватает, а композитинг поверх ST-шных blur-панелей
-           на телефонах дорогой — половина экономии без видимой разницы. */
-        if (this.coarse) cap = Math.min(cap, 40);
-        if (this.reduced || (typeof document.hasFocus === 'function' && !document.hasFocus())) {
-            /* окно не в фокусе (свернули, ушли в другую программу) — экономим кадры */
-            cap = Math.min(cap, 20);
-        }
+        const cap = this._fpsCap();
         if (ts - this._lastDraw < 1000 / cap - 1.5) {
             this.raf = requestAnimationFrame(this._frame);
             return;
@@ -826,6 +881,7 @@ export class Engine {
         p.y += (p.ty - p.y) * ease;
         if (this.kickAmt > 0) this.kickAmt = Math.max(0, this.kickAmt - dt * 0.9);
 
+        const costStart = performance.now();
         for (const pane of this.panes) {
             const ctx = pane.ctx;
             if (!ctx) continue;
@@ -846,6 +902,38 @@ export class Engine {
                 }
             }
             ctx.globalCompositeOperation = 'source-over';
+        }
+
+        /* «Только фон»: нарисовали один кадр и остановились до следующей смены сцены. */
+        if (this.staticMode) {
+            this.paused = true;
+            this.raf = 0;
+            return;
+        }
+
+        /* Авто-качество: смотрим, сколько реально стоит кадр. Если дорого —
+           спускаемся на профиль ниже, если с запасом — пробуем вернуться выше. */
+        if (this.quality === 'auto') {
+            this._costSum += performance.now() - costStart;
+            this._costN += 1;
+            if (this._costN >= 90) {
+                const avg = this._costSum / this._costN;
+                this._costSum = 0;
+                this._costN = 0;
+                if (avg > 9 && this.autoLevel < 2) {
+                    this.autoLevel += 1;
+                    this._levelAt = performance.now();
+                    this.resize();
+                    this.applyLook();
+                    this.rebuild();
+                } else if (avg < 3.5 && this.autoLevel > 0 && performance.now() - this._levelAt > 10000) {
+                    this.autoLevel -= 1;
+                    this._levelAt = performance.now();
+                    this.resize();
+                    this.applyLook();
+                    this.rebuild();
+                }
+            }
         }
 
         this.raf = requestAnimationFrame(this._frame);

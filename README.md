@@ -33,8 +33,9 @@ Requires SillyTavern **1.12+**. No API, no external requests, nothing is written
 | `rainy` | Grey Rain | steady rain, overcast sky |
 | `snow` | Snowfall | snowflakes, cold haze |
 | `fog` | Foggy Morning | mist bands, dust |
-| `campfire` | Campfire | embers, warm grade |
-| `candle` | Candlelit Room | fine sparks, dim warm light |
+| `campfire` | Campfire | embers, warm grade, small branches lit from below |
+| `fireplace` | Fireplace | stacked logs, flickering fire light, embers |
+| `candle` | Candlelit Room | soft point light, fine sparks |
 | `deep` | Deep Water | bubbles, plankton, blue grade |
 | `neon` | Neon Rain | coloured rain, violet grade |
 | `starfall` | Starfall | stars, meteors |
@@ -44,6 +45,8 @@ Requires SillyTavern **1.12+**. No API, no external requests, nothing is written
 | `autumn` | Autumn Leaves | bare branches from the top, falling leaves, warm haze |
 | `garden` | Green Garden | green leaves, pollen dust |
 | `sakura` | Sakura | petals, pink haze |
+| `romance` | Romance | soft bokeh, rose petals, warm point light |
+| `passion` | Crimson Evening | deep red bokeh, dark petals, slow pulse |
 | `arcane` | Magic | particles with tails, swirling sparks |
 | `cloudy` | Overcast | grey sky, drifting mist |
 | `sunny` | Sunny Day | warm light shafts, floating pollen |
@@ -51,6 +54,7 @@ Requires SillyTavern **1.12+**. No API, no external requests, nothing is written
 | `blizzard` | Blizzard | sideways snow, dense low mist |
 | `aurora` | Northern Lights | procedural aurora curtains, moon, light snow, dust |
 | `birthday` | Candles & Cake | candle halo, golden sparks, dust that follows the cursor |
+| `horror` | Horror | cold rim-lit branches, crawling fog, ash, crows, blinking eyes |
 
 ![Desert](preview/preview-desert.jpg)
 ![Sakura](preview/preview-sakura.jpg)
@@ -118,7 +122,8 @@ the next weather/place change takes over again.
 | **Scene background** | how strongly the sky gradient covers the chat — the main readability guard, default 45% |
 | Shade | black overlay for night / gloomy moods |
 | Layer | **background only** (under the chat, default) or **above the chat** (particles over the messages, sky stays behind) |
-| Lite mode | half the particles, DPR 1 — for weak devices; also disables parallax |
+| Lite mode | half the particles, DPR 1, 30 fps — for weak devices; also disables parallax |
+| Quality | **auto** (measures frame cost and picks a profile), high, medium, low or **only background** (one frame, loop stopped) |
 | Mouse parallax | mist, branches, aurora, crows and dust move in layers with the cursor — desktop only, off on touch |
 | React to messages | sending a message throws a gust through leaves and rain, receiving one gives a warm flash and sparks |
 | Day cycle | the sky is tinted by the hour from Scene Panel (`sessionHour`, or the time-of-day text) |
